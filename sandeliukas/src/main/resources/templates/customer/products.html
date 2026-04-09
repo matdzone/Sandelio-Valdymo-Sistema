@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Produktai</title>
+</head>
+<body>
+
+<h1>Produktų sąrašas</h1>
+
+<table border="1">
+    <tr>
+        <th>ID</th>
+        <th>Pavadinimas</th>
+        <th>Kaina</th>
+        <th>Likutis</th>
+    </tr>
+
+    <tr th:each="product : ${products}">
+        <td th:text="${product.id}"></td>
+        <td th:text="${product.name}"></td>
+        <td th:text="${product.supplierPrice}"></td>
+        <td th:text="${product.initialStock}"></td>
+    </tr>
+</table>
+
+</body>
+</html>
