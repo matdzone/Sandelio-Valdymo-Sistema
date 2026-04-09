@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Prekių krepšelis</title>
+</head>
+<body>
+
+<h1>Prekių krepšelis</h1>
+
+<div th:if="${success}">
+    <p style="color:green;" th:text="${success}"></p>
+</div>
+
+<div th:if="${error}">
+    <p style="color:red;" th:text="${error}"></p>
+</div>
+
+<table border="1">
+    <tr>
+        <th>ID</th>
+        <th>Prekė</th>
+        <th>Kaina</th>
+        <th>Kiekis</th>
+        <th>Suma</th>
+        <th>Veiksmai</th>
+    </tr>
+
+    <tr th:each="item : ${cartItems}">
+        <td th:text="${item.id}"></td>
+        <td th:text="${item.product.name}"></td>
+        <td th:text="${item.product.supplierPrice}"></td>
+        <td th:text="${item.quantity}"></td>
+        <td th:text="${item.product.supplierPrice * item.quantity}"></td>
+        <td>
+            <form th:action="@{/customer/cart/delete}" method="post" style="display:inline;">
+                <input type="hidden" name="cartItemId" th:value="${item.id}">
+                <button type="submit">DeleteItemButton</button>
+            </form>
+
+            <form th:action="@{/customer/cart/change-amount}" method="post" style="display:inline;">
+                <input type="hidden" name="cartItemId" th:value="${item.id}">
+                <input type="number" name="newAmount" min="1" th:value="${item.quantity}">
+                <button type="submit">NewAmountConfirmButton</button>
+            </form>
+        </td>
+    </tr>
+</table>
+
+<h3>Bendra suma: <span th:text="${cartTotal}"></span></h3>
+
+<form th:action="@{/customer/cart/reserve}" method="post">
+    <button type="submit">PurchaseButton</button>
+</form>
+
+</body>
+</html>
