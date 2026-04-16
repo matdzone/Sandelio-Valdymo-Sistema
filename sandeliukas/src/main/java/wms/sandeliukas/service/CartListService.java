@@ -32,12 +32,14 @@ public class CartListService {
         this.productRepository = productRepository;
     }
 
-    // 5. SelectCartItemsNotBought
+    // Sekų diagrama "Peržiūrėti prekių krepšelį", žinutė 5: selectCartItemsNotBought
+    // Naudojama: CartListController.requestCartItemList()
     public List<ShoppingCartItem> selectCartItemsNotBought(String buyerEmail) {
         return shoppingCartItemRepository.findByBuyerEmailAndBoughtFalse(buyerEmail);
     }
 
-    // 3. DeleteSelectedItem
+    // Sekų diagrama "Valdyti krepšelyje esančias prekes", žinutė 3: deleteSelectedItem
+    // Naudojama: CartListController.requestDeleteItem()
     @Transactional
     public void deleteSelectedItem(String buyerEmail, Integer cartItemId) {
         ShoppingCartItem item = shoppingCartItemRepository.findById(cartItemId)
@@ -50,7 +52,8 @@ public class CartListService {
         shoppingCartItemRepository.delete(item);
     }
 
-    // 9. SetNewAmountForItemInCart
+    // Sekų diagrama "Valdyti krepšelyje esančias prekes", žinutė 9: setNewAmountForItemInCart
+    // Naudojama: CartListController.requestNewAmount()
     @Transactional
     public void setNewAmountForItemInCart(String buyerEmail, Integer cartItemId, Integer newAmount) {
         ShoppingCartItem item = shoppingCartItemRepository.findById(cartItemId)
@@ -73,28 +76,32 @@ public class CartListService {
         shoppingCartItemRepository.save(item);
     }
 
-    // 1. GetCartItemsNotBought
+    // Sekų diagrama "Rezervuoti pirkimą", žinutė 1: getCartItemsNotBought
+    // Naudojama viduje reserveNewPurchaseWithCartItemsAndDate()
+    // Skirtumas nuo selectCartItemsNotBought: grąžina tik tas prekes, kurios dar nepriskirtos jokiam pirkimui
     public List<ShoppingCartItem> getCartItemsNotBought(String buyerEmail) {
         return shoppingCartItemRepository.findByBuyerEmailAndBoughtFalseAndPurchaseIsNull(buyerEmail);
     }
-    @Transactional
+
+    // Pagalbinis metodas krepšelio sumos skaičiavimui (naudojamas rodinyje)
     public double calculateCartTotal(String buyerEmail) {
         List<ShoppingCartItem> items = selectCartItemsNotBought(buyerEmail);
-
         double total = 0;
-
         for (ShoppingCartItem item : items) {
             total += item.getQuantity() * item.getProduct().getSupplierPrice();
         }
-
         return total;
     }
-    // 3. ReserveNewPurchaseWithCartItemsAndDate
+
+    // Sekų diagrama "Rezervuoti pirkimą", žinutė 3: reserveNewPurchaseWithCartItemsAndDate
+    // Veiklos diagrama: sukurti pirkimo įrašą ir prie jo priskirti norimas prekes → įrašyti rezervavimo laiką
+    // Naudojama: CartListController.requestPurchase()
     @Transactional
     public Purchase reserveNewPurchaseWithCartItemsAndDate(String buyerEmail) {
         User buyer = userRepository.findById(buyerEmail)
                 .orElseThrow(() -> new RuntimeException("Pirkėjas nerastas"));
 
+        // 1. getCartItemsNotBought
         List<ShoppingCartItem> cartItems = getCartItemsNotBought(buyerEmail);
 
         if (cartItems.isEmpty()) {
@@ -109,27 +116,26 @@ public class CartListService {
         }
 
         Integer maxId = purchaseRepository.findMaxId();
-        Integer newPurchaseId = maxId + 1;
+        Integer newPurchaseId = (maxId == null ? 0 : maxId) + 1;
 
+        // Sukurti pirkimo įrašą ir prie jo priskirti norimas prekes
         Purchase purchase = new Purchase();
         purchase.setId(newPurchaseId);
         purchase.setBuyer(buyer);
 
-        // pagal tavo veiklos diagramą: įrašyti rezervavimo laiką
+        // Įrašyti pirkimo rezervavimo laiką (veiklos diagrama: output [Rezervuotas] → įrašyti rezervavimo laiką)
         purchase.setReservationDate(LocalDate.now());
-
-        // mokėjimo dar nerealizuojam
         purchase.setPaymentDate(null);
         purchase.setPickupDate(null);
 
-        // PaymentStatus: Reserved
+        // paymentStatus = 1 → Rezervuotas
         purchase.setPaymentStatus(1);
-
-        // PurchaseStatus: Ordered
+        // status = 1 → Užsakytas
         purchase.setStatus(1);
 
         Purchase savedPurchase = purchaseRepository.save(purchase);
 
+        // Priskirti krepšelio prekes pirkimui
         for (ShoppingCartItem item : cartItems) {
             Product product = item.getProduct();
 
@@ -141,6 +147,7 @@ public class CartListService {
             shoppingCartItemRepository.save(item);
         }
 
+        // 4. reservationSuccess
         return savedPurchase;
     }
 }
