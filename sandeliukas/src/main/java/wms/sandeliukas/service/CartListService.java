@@ -101,7 +101,6 @@ public class CartListService {
         User buyer = userRepository.findById(buyerEmail)
                 .orElseThrow(() -> new RuntimeException("Pirkėjas nerastas"));
 
-        // 1. getCartItemsNotBought
         List<ShoppingCartItem> cartItems = getCartItemsNotBought(buyerEmail);
 
         if (cartItems.isEmpty()) {
@@ -115,39 +114,42 @@ public class CartListService {
             }
         }
 
+        Purchase savedPurchase = createReservedPurchase(buyer);
+        assignCartItemsToReservedPurchase(cartItems, savedPurchase);
+
+        return savedPurchase;
+    }
+
+    private Purchase createReservedPurchase(User buyer) {
         Integer maxId = purchaseRepository.findMaxId();
         Integer newPurchaseId = (maxId == null ? 0 : maxId) + 1;
 
-        // Sukurti pirkimo įrašą ir prie jo priskirti norimas prekes
         Purchase purchase = new Purchase();
         purchase.setId(newPurchaseId);
         purchase.setBuyer(buyer);
-
-        // Įrašyti pirkimo rezervavimo laiką (veiklos diagrama: output [Rezervuotas] → įrašyti rezervavimo laiką)
         purchase.setReservationDate(LocalDate.now());
         purchase.setPaymentDate(null);
         purchase.setPickupDate(null);
 
-        // paymentStatus = 1 → Rezervuotas
+        // paymentStatus = 1 -> Rezervuotas
         purchase.setPaymentStatus(1);
-        // status = 1 → Užsakytas
+
+        // status = 1 -> Užsakytas
         purchase.setStatus(1);
 
-        Purchase savedPurchase = purchaseRepository.save(purchase);
+        return purchaseRepository.save(purchase);
+    }
 
-        // Priskirti krepšelio prekes pirkimui
+    private void assignCartItemsToReservedPurchase(List<ShoppingCartItem> cartItems, Purchase purchase) {
         for (ShoppingCartItem item : cartItems) {
             Product product = item.getProduct();
 
             product.setInitialStock(product.getInitialStock() - item.getQuantity());
             productRepository.save(product);
 
-            item.setPurchase(savedPurchase);
+            item.setPurchase(purchase);
             item.setBought(true);
             shoppingCartItemRepository.save(item);
         }
-
-        // 4. reservationSuccess
-        return savedPurchase;
     }
 }
