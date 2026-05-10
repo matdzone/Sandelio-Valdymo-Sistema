@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Prekių sandėliavimas</title>
+    <style>
+        body { background: #0f1112; color: #dce3e8; font-family: Arial, sans-serif; margin: 0; }
+        main { max-width: 1080px; margin: 0 auto; padding: 40px 28px; }
+        h1 { color: #f5a623; margin-top: 0; }
+        .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; }
+        a, button { border: 1px solid #f5a623; background: transparent; color: #f5a623; padding: 10px 14px; text-decoration: none; font-weight: bold; cursor: pointer; }
+        select { background: #0d1013; color: #dce3e8; border: 1px solid #2a3035; padding: 10px; }
+        table { width: 100%; border-collapse: collapse; background: #181c1e; border: 1px solid #2a3035; }
+        th, td { padding: 12px; border-bottom: 1px solid #2a3035; text-align: left; }
+        th { color: #9aa6b2; }
+        .notice { padding: 12px; margin-bottom: 16px; }
+        .success { background: rgba(46, 204, 113, .12); color: #2ecc71; }
+        .error { background: rgba(232, 56, 13, .12); color: #ff6b4a; }
+        .panel { border: 1px solid #2a3035; background: #181c1e; padding: 18px; margin-bottom: 18px; }
+    </style>
+</head>
+<body>
+<main>
+    <h1>Prekių sandėliavimas</h1>
+
+    <div class="actions">
+        <a th:href="@{/customer/menu}">Meniu</a>
+        <a th:href="@{/warehouse/manual}">Rankinis prekės išdėstymas</a>
+    </div>
+
+    <div th:if="${success}" class="notice success" th:text="${success}"></div>
+    <div th:if="${error}" class="notice error" th:text="${error}"></div>
+
+    <table>
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Prekė</th>
+            <th>Tūris</th>
+            <th>Rūšis</th>
+            <th>Likutis</th>
+            <th>Stelažas</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="item : ${items}">
+            <td th:text="${item.id}"></td>
+            <td th:text="${item.name}"></td>
+            <td th:text="${item.volume}"></td>
+            <td th:text="${item.type}"></td>
+            <td th:text="${item.stock}"></td>
+            <td th:text="${item.rack}"></td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+</body>
+</html>

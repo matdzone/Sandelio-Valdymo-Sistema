@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Rankinis prekės išdėstymas</title>
+    <style>
+        body { background: #0f1112; color: #dce3e8; font-family: Arial, sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; margin: 0; }
+        main { width: 520px; background: #181c1e; border: 1px solid #2a3035; padding: 28px; }
+        h1 { color: #f5a623; margin-top: 0; }
+        label { display: block; margin: 14px 0 6px; color: #9aa6b2; }
+        select, button, a { width: 100%; box-sizing: border-box; padding: 12px; margin-top: 8px; }
+        select { background: #0d1013; color: #dce3e8; border: 1px solid #2a3035; }
+        button, a { display: block; border: 1px solid #f5a623; background: #f5a623; color: #000; font-weight: bold; text-align: center; text-decoration: none; cursor: pointer; }
+        a { background: transparent; color: #f5a623; margin-top: 16px; }
+    </style>
+</head>
+<body>
+<main>
+    <h1>Rankinis prekės išdėstymas</h1>
+
+    <form th:action="@{/warehouse/manual}" method="get">
+        <label for="productId">Prekė</label>
+        <select id="productId" name="productId" required>
+            <option value="">Pasirinkite prekę</option>
+            <option th:each="product : ${products}"
+                    th:value="${product.id}"
+                    th:selected="${selectedProductId == product.id}"
+                    th:text="${product.name}"></option>
+        </select>
+        <button type="submit">Rodyti galimus stelažus</button>
+    </form>
+
+    <form th:if="${racks}" th:action="@{/warehouse/manual}" method="post">
+        <input type="hidden" name="productId" th:value="${selectedProductId}">
+        <label for="rackId">Stelažas</label>
+        <select id="rackId" name="rackId" required>
+            <option value="">Pasirinkite stelažą</option>
+            <option th:each="rack : ${racks}" th:value="${rack.id}" th:text="${rack.name}"></option>
+        </select>
+        <button type="submit">Patvirtinti pasirinkimą</button>
+    </form>
+
+    <a th:href="@{/warehouse}">Grįžti į planą</a>
+</main>
+</body>
+</html>
