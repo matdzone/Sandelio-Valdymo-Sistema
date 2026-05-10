@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Pagrindinis meniu - Sandėliukas</title>
+    <style>
+        body {
+            background: #0f1112;
+            color: #dce3e8;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        main {
+            width: 430px;
+            background: #181c1e;
+            border: 1px solid #2a3035;
+            padding: 32px;
+        }
+
+        h1 {
+            color: #f5a623;
+            margin: 0 0 24px;
+        }
+
+        a, button {
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 14px;
+            padding: 14px;
+            border: 1px solid #f5a623;
+            background: transparent;
+            color: #f5a623;
+            font-weight: bold;
+            text-align: center;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        a.primary {
+            background: #f5a623;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+<main>
+    <h1>Pagrindinis meniu</h1>
+
+    <a class="primary" th:href="@{/customer/notifications}">Peržiūrėti pranešimus</a>
+    <a th:href="@{/customer/cart}">Peržiūrėti krepšelį</a>
+    <a th:href="@{/customer/products}">Produktai</a>
+
+    <form th:action="@{/logout}" method="post">
+        <button type="submit">Atsijungti</button>
+    </form>
+</main>
+</body>
+</html>
