@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Paklausos prognozė — Sandėliukas</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg:#0f1112; --surface:#181c1e; --border:#2a3035; --stripe:#151a1c;
+            --accent:#f5a623; --accent2:#e8380d; --text:#dce3e8; --muted:#5a6672;
+            --green:#2ecc71; --blue:#4a90e2; --red:#e8380d;
+        }
+
+        * { box-sizing:border-box; margin:0; padding:0; }
+
+        body {
+            background:var(--bg);
+            color:var(--text);
+            font-family:'IBM Plex Sans', sans-serif;
+            font-size:14px;
+            min-height:100vh;
+        }
+
+        .hazard-bar {
+            height:6px;
+            background:repeating-linear-gradient(-45deg,var(--accent) 0 12px,#1a1a1a 12px 24px);
+        }
+
+        header {
+            background:var(--surface);
+            border-bottom:1px solid var(--border);
+            height:64px;
+            display:flex;
+            align-items:center;
+            padding:0 40px;
+        }
+
+        .logo {
+            font-family:'Bebas Neue', sans-serif;
+            font-size:28px;
+            letter-spacing:3px;
+            color:var(--accent);
+            line-height:1;
+        }
+
+        .logo span {
+            display:block;
+            color:var(--muted);
+            font-family:'IBM Plex Mono', monospace;
+            font-size:11px;
+            letter-spacing:2px;
+            margin-top:2px;
+        }
+
+        .header-sep { flex:1; }
+
+        .header-badge {
+            font-family:'IBM Plex Mono', monospace;
+            font-size:11px;
+            color:var(--muted);
+            border:1px solid var(--border);
+            padding:4px 10px;
+            letter-spacing:1px;
+        }
+
+        main {
+            max-width:1280px;
+            margin:0 auto;
+            padding:48px 40px 80px;
+        }
+
+        .page-title {
+            display:flex;
+            align-items:baseline;
+            gap:20px;
+            margin-bottom:28px;
+            padding-bottom:20px;
+            border-bottom:1px solid var(--border);
+        }
+
+        .page-title h1 {
+            font-family:'Bebas Neue', sans-serif;
+            font-size:48px;
+            letter-spacing:4px;
+            line-height:1;
+        }
+
+        .section-id {
+            font-family:'IBM Plex Mono', monospace;
+            font-size:12px;
+            color:var(--accent);
+            border:1px solid var(--accent);
+            padding:3px 8px;
+            letter-spacing:2px;
+        }
+
+        .flash {
+            padding:14px 20px;
+            margin-bottom:24px;
+            font-family:'IBM Plex Mono', monospace;
+            font-size:13px;
+            border-left:3px solid;
+        }
+
+        .flash-success { background:rgba(46,204,113,.07); border-color:var(--green); color:var(--green); }
+        .flash-error { background:rgba(232,56,13,.07); border-color:var(--red); color:var(--red); }
+
+        .panel {
+            background:var(--surface);
+            border:1px solid var(--border);
+            margin-bottom:28px;
+        }
+
+        .panel-head {
+            padding:18px 22px;
+            border-bottom:1px solid var(--border);
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+        }
+
+        .panel-title {
+            font-family:'IBM Plex Mono', monospace;
+            font-size:12px;
+            letter-spacing:2px;
+            text-transform:uppercase;
+            color:var(--accent);
+        }
+
+        .analyze-btn {
+            background:var(--accent);
+            color:#000;
+            border:none;
+            padding:10px 24px;
+            font-family:'Bebas Neue', sans-serif;
+            font-size:18px;
+            letter-spacing:2px;
+            cursor:pointer;
+            clip-path:polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+        }
+
+        .chart-wrap {
+            padding:24px;
+        }
+
+        canvas {
+            width:100%;
+            height:360px;
+            background:#101315;
+            border:1px solid var(--border);
+        }
+
+        .metric-grid {
+            display:grid;
+            grid-template-columns:repeat(4, 1fr);
+            border-top:1px solid var(--border);
+        }
+
+        .metric {
+            padding:18px 22px;
+            border-right:1px solid var(--border);
+        }
+
+        .metric:last-child { border-right:none; }
+
+        .metric-label {
+            display:block;
+            font-family:'IBM Plex Mono', monospace;
+            font-size:10px;
+            letter-spacing:2px;
+            color:var(--muted);
+            text-transform:uppercase;
+            margin-bottom:8px;
+        }
+
+        .metric-value {
+            font-family:'Bebas Neue', sans-serif;
+            font-size:34px;
+            letter-spacing:2px;
+            color:var(--text);
+        }
+
+        .metric-value.accent { color:var(--accent); }
+
+        .table-wrap {
+            border:1px solid var(--border);
+            overflow-x:auto;
+        }
+
+        table {
+            width:100%;
+            border-collapse:collapse;
+            min-width:1180px;
+        }
+
+        thead tr { background:var(--surface); }
+
+        th {
+            font-family:'IBM Plex Mono', monospace;
+            font-size:10px;
+            font-weight:600;
+            letter-spacing:1.5px;
+            text-transform:uppercase;
+            color:var(--muted);
+            padding:14px 12px;
+            text-align:left;
+            border-bottom:1px solid var(--border);
+            white-space:nowrap;
+        }
+
+        td {
+            padding:12px;
+            border-bottom:1px solid var(--border);
+            vertical-align:middle;
+        }
+
+        tbody tr:nth-child(odd) { background:var(--bg); }
+        tbody tr:nth-child(even) { background:var(--stripe); }
+        tbody tr:hover { background:#1e2428; }
+
+        .td-id {
+            font-family:'IBM Plex Mono', monospace;
+            font-size:11px;
+            color:var(--muted);
+        }
+
+        .td-name {
+            font-weight:500;
+            min-width:210px;
+        }
+
+        .date-cell {
+            font-family:'IBM Plex Mono', monospace;
+            font-size:12px;
+            color:var(--muted);
+            white-space:nowrap;
+        }
+
+        input {
+            width:100%;
+            min-width:78px;
+            background:#0d1013;
+            color:var(--text);
+            border:1px solid var(--border);
+            padding:7px 9px;
+            font-family:'IBM Plex Mono', monospace;
+            font-size:12px;
+            outline:none;
+        }
+
+        input:focus { border-color:var(--accent); }
+
+        .btn-update {
+            background:transparent;
+            color:var(--accent);
+            border:1px solid var(--accent);
+            padding:8px 14px;
+            cursor:pointer;
+            font-family:'IBM Plex Mono', monospace;
+            font-size:11px;
+            letter-spacing:1px;
+            white-space:nowrap;
+        }
+
+        .btn-update:hover {
+            background:var(--accent);
+            color:#000;
+        }
+
+        .legend {
+            display:flex;
+            gap:20px;
+            margin-top:14px;
+            font-family:'IBM Plex Mono', monospace;
+            font-size:11px;
+            color:var(--muted);
+        }
+
+        .dot {
+            display:inline-block;
+            width:10px;
+            height:10px;
+            margin-right:6px;
+        }
+
+        .dot-demand { background:var(--blue); }
+        .dot-reorder { background:var(--accent); }
+        .dot-stock { background:var(--green); }
+        .dot-safety { background:var(--red); }
+    </style>
+</head>
+<body>
+
+<div class="hazard-bar"></div>
+
+<header>
+    <div class="logo">
+        Sandėliukas
+        <span>WAREHOUSE MANAGEMENT SYSTEM</span>
+    </div>
+    <div class="header-sep"></div>
+    <div class="header-badge">FORECAST MODULE</div>
+</header>
+
+<main>
+
+    <div th:if="${success}" class="flash flash-success">
+        <span th:text="${success}"></span>
+    </div>
+
+    <div th:if="${error}" class="flash flash-error">
+        <span th:text="${error}"></span>
+    </div>
+
+    <div class="page-title">
+        <h1>Prekių paklausos prognozė</h1>
+        <span class="section-id">FORECAST-01</span>
+    </div>
+
+    <section class="panel">
+        <div class="panel-head">
+            <div>
+                <div class="panel-title">Analyze product demand forecast</div>
+                <div style="font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--muted); margin-top:6px;">
+                    Demand · reorder point · safety stock · recommended quantity
+                </div>
+            </div>
+
+            <a th:href="@{/forecast}">
+                <button class="analyze-btn" type="button">Analyze</button>
+            </a>
+        </div>
+
+        <div class="chart-wrap">
+            <canvas id="forecastChart" width="1100" height="360"></canvas>
+
+            <div class="legend">
+                <span><i class="dot dot-demand"></i>Vidutinė paklausa</span>
+                <span><i class="dot dot-reorder"></i>Užsakymo taškas</span>
+                <span><i class="dot dot-stock"></i>Atsargų pozicija</span>
+                <span><i class="dot dot-safety"></i>Saugos atsargos</span>
+            </div>
+        </div>
+
+        <div class="metric-grid">
+            <div class="metric">
+                <span class="metric-label">Produktų skaičius</span>
+                <span class="metric-value" th:text="${#lists.size(forecasts)}"></span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Bendra rekomendacija</span>
+                <span class="metric-value accent" id="totalRecommended">0</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Didžiausias užsakymo taškas</span>
+                <span class="metric-value" id="maxReorder">0</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Vid. sezoniškumas</span>
+                <span class="metric-value" id="avgSeasonality">1.00</span>
+            </div>
+        </div>
+    </section>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>Prekė</th>
+                <th>Periodas nuo</th>
+                <th>Periodas iki</th>
+                <th>Vidutinė paklausa</th>
+                <th>Sezoniškumas</th>
+                <th>Atsargų pozicija</th>
+                <th>Užsakymo taškas</th>
+                <th>Saugos atsargos</th>
+                <th>Rekomenduojamas kiekis</th>
+                <th>Veiksmai</th>
+            </tr>
+            </thead>
+
+            <tbody>
+            <tr th:each="forecast : ${forecasts}">
+                <td class="td-id">
+                    <span th:text="${forecast.id}"></span>
+                    <input type="hidden"
+                           name="forecastId"
+                           th:value="${forecast.id}"
+                           th:form="'forecastForm-' + ${forecast.id}">
+                </td>
+
+                <td class="td-name" th:text="${forecast.product.name}"></td>
+                <td class="date-cell" th:text="${forecast.periodStart}"></td>
+                <td class="date-cell" th:text="${forecast.periodEnd}"></td>
+
+                <td>
+                    <input type="number"
+                           name="averageDemand"
+                           th:value="${forecast.averageDemand}"
+                           th:form="'forecastForm-' + ${forecast.id}">
+                </td>
+
+                <td>
+                    <input type="number"
+                           step="0.01"
+                           name="seasonalityCoeff"
+                           th:value="${forecast.seasonalityCoeff}"
+                           th:form="'forecastForm-' + ${forecast.id}">
+                </td>
+
+                <td>
+                    <input type="number"
+                           name="stockPosition"
+                           th:value="${forecast.stockPosition}"
+                           th:form="'forecastForm-' + ${forecast.id}">
+                </td>
+
+                <td>
+                    <input type="number"
+                           name="reorderPoint"
+                           th:value="${forecast.reorderPoint}"
+                           th:form="'forecastForm-' + ${forecast.id}">
+                </td>
+
+                <td>
+                    <input type="number"
+                           name="safetyStock"
+                           th:value="${forecast.safetyStock}"
+                           th:form="'forecastForm-' + ${forecast.id}">
+                </td>
+
+                <td>
+                    <input type="number"
+                           name="recommendedQuantity"
+                           th:value="${forecast.recommendedQuantity}"
+                           th:form="'forecastForm-' + ${forecast.id}">
+                </td>
+
+                <td>
+                    <button class="btn-update"
+                            type="submit"
+                            th:form="'forecastForm-' + ${forecast.id}">
+                        Save
+                    </button>
+
+                    <form th:id="'forecastForm-' + ${forecast.id}"
+                          th:action="@{/forecast/update}"
+                          method="post"></form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+</main>
+
+<script th:inline="javascript">
+    const forecastData = [];
+</script>
+
+<script th:each="forecast : ${forecasts}" th:inline="javascript">
+    forecastData.push({
+        name: /*[[${forecast.product.name}]]*/ "Product",
+        averageDemand: /*[[${forecast.averageDemand}]]*/ 0,
+        reorderPoint: /*[[${forecast.reorderPoint}]]*/ 0,
+        stockPosition: /*[[${forecast.stockPosition}]]*/ 0,
+        safetyStock: /*[[${forecast.safetyStock}]]*/ 0,
+        recommendedQuantity: /*[[${forecast.recommendedQuantity}]]*/ 0,
+        seasonalityCoeff: /*[[${forecast.seasonalityCoeff}]]*/ 1
+    });
+</script>
+
+<script>
+    const canvas = document.getElementById("forecastChart");
+    const ctx = canvas.getContext("2d");
+
+    const W = canvas.width;
+    const H = canvas.height;
+    const pad = 54;
+    const graphW = W - pad * 2;
+    const graphH = H - pad * 2;
+
+    const maxValue = Math.max(
+        10,
+        ...forecastData.map(f => f.averageDemand || 0),
+        ...forecastData.map(f => f.reorderPoint || 0),
+        ...forecastData.map(f => f.stockPosition || 0),
+        ...forecastData.map(f => f.safetyStock || 0)
+    );
+
+    const x = i => pad + (forecastData.length <= 1 ? graphW / 2 : i * (graphW / (forecastData.length - 1)));
+    const y = v => H - pad - ((v || 0) / maxValue) * graphH;
+
+    function line(points, color, dashed = false) {
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.setLineDash(dashed ? [10, 8] : []);
+
+        points.forEach((p, i) => {
+            if (i === 0) ctx.moveTo(x(i), y(p));
+            else ctx.lineTo(x(i), y(p));
+        });
+
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    function dots(points, color) {
+        ctx.fillStyle = color;
+        points.forEach((p, i) => {
+            ctx.beginPath();
+            ctx.arc(x(i), y(p), 4, 0, Math.PI * 2);
+            ctx.fill();
+        });
+    }
+
+    function drawGrid() {
+        ctx.clearRect(0, 0, W, H);
+
+        ctx.fillStyle = "#101315";
+        ctx.fillRect(0, 0, W, H);
+
+        ctx.strokeStyle = "#2a3035";
+        ctx.lineWidth = 1;
+
+        for (let i = 0; i <= 5; i++) {
+            const gy = pad + i * (graphH / 5);
+            ctx.beginPath();
+            ctx.moveTo(pad, gy);
+            ctx.lineTo(W - pad, gy);
+            ctx.stroke();
+
+            const val = Math.round(maxValue - (i * maxValue / 5));
+            ctx.fillStyle = "#5a6672";
+            ctx.font = "12px IBM Plex Mono";
+            ctx.fillText(val.toString(), 12, gy + 4);
+        }
+
+        ctx.strokeStyle = "#5a6672";
+        ctx.beginPath();
+        ctx.moveTo(pad, pad);
+        ctx.lineTo(pad, H - pad);
+        ctx.lineTo(W - pad, H - pad);
+        ctx.stroke();
+
+        forecastData.forEach((f, i) => {
+            ctx.save();
+            ctx.translate(x(i), H - pad + 18);
+            ctx.rotate(-Math.PI / 5);
+            ctx.fillStyle = "#5a6672";
+            ctx.font = "11px IBM Plex Mono";
+            ctx.fillText(f.name.length > 18 ? f.name.substring(0, 18) + "..." : f.name, 0, 0);
+            ctx.restore();
+        });
+    }
+
+    drawGrid();
+
+    const demand = forecastData.map(f => f.averageDemand);
+    const reorder = forecastData.map(f => f.reorderPoint);
+    const stock = forecastData.map(f => f.stockPosition);
+    const safety = forecastData.map(f => f.safetyStock);
+
+    line(stock, "#2ecc71", false);
+    line(reorder, "#f5a623", true);
+    line(demand, "#4a90e2", false);
+    line(safety, "#e8380d", true);
+
+    dots(stock, "#2ecc71");
+    dots(reorder, "#f5a623");
+    dots(demand, "#4a90e2");
+    dots(safety, "#e8380d");
+
+    const totalRecommended = forecastData.reduce((s, f) => s + (f.recommendedQuantity || 0), 0);
+    const maxReorder = Math.max(0, ...forecastData.map(f => f.reorderPoint || 0));
+    const avgSeasonality =
+        forecastData.length === 0
+            ? 1
+            : forecastData.reduce((s, f) => s + (f.seasonalityCoeff || 1), 0) / forecastData.length;
+
+    document.getElementById("totalRecommended").innerText = totalRecommended;
+    document.getElementById("maxReorder").innerText = maxReorder;
+    document.getElementById("avgSeasonality").innerText = avgSeasonality.toFixed(2);
+</script>
+
+</body>
+</html>
