@@ -22,6 +22,9 @@ public class Product {
     @Column(name = "initialStock")
     private Integer initialStock;
 
+    @Column(name = "currentStock")
+    private Integer currentStock;
+
     public Integer getId() {
         return id;
     }
@@ -44,5 +47,13 @@ public class Product {
 
     public void setInitialStock(Integer initialStock) {
         this.initialStock = initialStock;
+    }
+
+    public Integer getCurrentStock() {
+        return currentStock;
+    }
+
+    public void setCurrentStock(Integer currentStock) {
+        this.currentStock = currentStock;
     }
 }
