@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Pranešimai - Sandėliukas</title>
+    <style>
+        body {
+            background: #0f1112;
+            color: #dce3e8;
+            font-family: Arial, sans-serif;
+            margin: 0;
+        }
+
+        main {
+            max-width: 920px;
+            margin: 0 auto;
+            padding: 42px 28px;
+        }
+
+        h1 {
+            color: #f5a623;
+            margin: 0 0 22px;
+        }
+
+        .top-actions {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 22px;
+        }
+
+        a, button {
+            border: 1px solid #f5a623;
+            background: transparent;
+            color: #f5a623;
+            padding: 10px 14px;
+            text-decoration: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .notice {
+            padding: 12px 14px;
+            margin-bottom: 16px;
+        }
+
+        .success { background: rgba(46, 204, 113, .12); color: #2ecc71; }
+        .error { background: rgba(232, 56, 13, .12); color: #ff6b4a; }
+
+        .notification {
+            border: 1px solid #2a3035;
+            background: #181c1e;
+            padding: 18px;
+            margin-bottom: 12px;
+        }
+
+        .notification h2 {
+            margin: 0 0 10px;
+            font-size: 18px;
+        }
+
+        .notification p {
+            margin: 0 0 14px;
+            color: #b8c3cc;
+            line-height: 1.5;
+        }
+
+        .muted {
+            color: #7d8994;
+        }
+    </style>
+</head>
+<body>
+<main>
+    <h1>Pranešimai</h1>
+
+    <div class="top-actions">
+        <a th:href="@{/customer/menu}">Meniu</a>
+        <a th:href="@{/customer/notifications/settings}">Redaguoti pranešimų nustatymus</a>
+    </div>
+
+    <div th:if="${success}" class="notice success" th:text="${success}"></div>
+    <div th:if="${error}" class="notice error" th:text="${error}"></div>
+
+    <div th:if="${#lists.isEmpty(notifications)}" class="muted">
+        Pranešimų nėra.
+    </div>
+
+    <section th:each="notification : ${notifications}" class="notification">
+        <h2 th:text="${notification.title}">Pranešimas</h2>
+        <p th:text="${notification.content}">Turinys</p>
+        <form th:action="@{/customer/notifications/delete}" method="post">
+            <input type="hidden" name="notificationId" th:value="${notification.id}">
+            <button type="submit">Trinti pranešimą</button>
+        </form>
+    </section>
+</main>
+</body>
+</html>
