@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Registruotis - Sandėliukas</title>
+    <style>
+        body {
+            background: #0f1112;
+            color: #dce3e8;
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+        }
+
+        .auth-box {
+            width: 390px;
+            background: #181c1e;
+            border: 1px solid #2a3035;
+            padding: 28px;
+        }
+
+        h1 {
+            margin: 0 0 22px;
+            color: #f5a623;
+            font-size: 28px;
+        }
+
+        label {
+            display: block;
+            margin: 14px 0 6px;
+            font-size: 13px;
+            color: #9aa6b2;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #2a3035;
+            background: #0d1013;
+            color: #dce3e8;
+            box-sizing: border-box;
+        }
+
+        button, .link-button {
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 18px;
+            padding: 12px;
+            text-align: center;
+            border: 0;
+            background: #f5a623;
+            color: #000;
+            font-weight: bold;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .link-button {
+            background: transparent;
+            color: #f5a623;
+            border: 1px solid #f5a623;
+        }
+
+        .flash {
+            padding: 10px;
+            margin-bottom: 14px;
+            font-size: 13px;
+            background: rgba(232, 56, 13, .12);
+            color: #ff6b4a;
+        }
+    </style>
+</head>
+<body>
+<main class="auth-box">
+    <h1>Registruotis</h1>
+
+    <div th:if="${error}" class="flash" th:text="${error}"></div>
+
+    <form th:action="@{/register}" method="post">
+        <label for="firstName">Vardas</label>
+        <input id="firstName" name="firstName" type="text" th:value="${firstName}" required>
+
+        <label for="lastName">Pavardė</label>
+        <input id="lastName" name="lastName" type="text" th:value="${lastName}" required>
+
+        <label for="email">El. paštas</label>
+        <input id="email" name="email" type="email" th:value="${email}" required>
+
+        <label for="password">Slaptažodis</label>
+        <input id="password" name="password" type="password" required>
+
+        <label for="repeatedPassword">Pakartokite slaptažodį</label>
+        <input id="repeatedPassword" name="repeatedPassword" type="password" required>
+
+        <button type="submit">Registruotis</button>
+    </form>
+
+    <a class="link-button" th:href="@{/login}">Jau turiu paskyrą</a>
+</main>
+</body>
+</html>
