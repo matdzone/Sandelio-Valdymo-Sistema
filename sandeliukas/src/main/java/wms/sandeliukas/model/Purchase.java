@@ -2,6 +2,7 @@ package wms.sandeliukas.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "Purchase")
@@ -15,7 +16,7 @@ public class Purchase {
     private LocalDate paymentDate;
 
     @Column(name = "reservationDate")
-    private LocalDate reservationDate;
+    private LocalDateTime reservationDate;
 
     @Column(name = "pickupDate")
     private LocalDate pickupDate;
@@ -46,11 +47,11 @@ public class Purchase {
         this.paymentDate = paymentDate;
     }
 
-    public LocalDate getReservationDate() {
+    public LocalDateTime getReservationDate() {
         return reservationDate;
     }
 
-    public void setReservationDate(LocalDate reservationDate) {
+    public void setReservationDate(LocalDateTime reservationDate) {
         this.reservationDate = reservationDate;
     }
 

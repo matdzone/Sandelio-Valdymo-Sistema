@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${product.name} + ' — Sandėliukas'">Prekė — Sandėliukas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root{--bg:#0f1112;--surface:#181c1e;--border:#2a3035;--accent:#f5a623;--text:#dce3e8;--muted:#5a6672;--green:#2ecc71;--red:#e8380d;--stripe:#151a1c}
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:14px;min-height:100vh}
+        .hazard-bar{height:6px;background:repeating-linear-gradient(-45deg,var(--accent) 0,var(--accent) 12px,#1a1a1a 12px,#1a1a1a 24px)}
+        header{background:var(--surface);border-bottom:1px solid var(--border);height:64px;display:flex;align-items:center;padding:0 40px;gap:16px}
+        .logo{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:3px;color:var(--accent);line-height:1}
+        .logo span{color:var(--muted);font-size:11px;font-family:'IBM Plex Mono',monospace;letter-spacing:2px;display:block;margin-top:2px}
+        .header-sep{flex:1}
+        .nav-link{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);text-decoration:none;border:1px solid var(--accent);padding:4px 12px;letter-spacing:1px}
+        .nav-link:hover{background:var(--accent);color:#000}
+        .header-badge{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);border:1px solid var(--border);padding:4px 10px;letter-spacing:1px}
+        main{max-width:1100px;margin:0 auto;padding:48px 40px 80px}
+        .flash{display:flex;align-items:center;gap:12px;padding:14px 20px;margin-bottom:28px;font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.5px;border-left:3px solid;animation:slideIn .3s ease}
+        .flash-success{background:rgba(46,204,113,.07);border-color:var(--green);color:var(--green)}
+        .flash-error{background:rgba(232,56,13,.07);border-color:var(--red);color:var(--red)}
+        .flash-success::before{content:'✓ '} .flash-error::before{content:'✕ '}
+        @keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+        .breadcrumb{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);margin-bottom:32px}
+        .breadcrumb a{color:var(--accent);text-decoration:none}
+        .breadcrumb a:hover{text-decoration:underline}
+        .product-header{border-bottom:1px solid var(--border);padding-bottom:28px;margin-bottom:32px}
+        .product-id{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:2px;margin-bottom:10px}
+        .product-name{font-family:'Bebas Neue',sans-serif;font-size:52px;letter-spacing:4px;line-height:1;margin-bottom:16px}
+        .product-meta{display:flex;gap:32px;flex-wrap:wrap;margin-bottom:20px}
+        .meta-item{display:flex;flex-direction:column;gap:4px}
+        .meta-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase}
+        .meta-value{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600}
+        .meta-value.price{color:var(--accent)}
+        .meta-value.stock-ok{color:var(--green)}
+        .meta-value.stock-low{color:var(--red)}
+        .cart-section{background:var(--surface);border:1px solid var(--border);padding:24px 28px;margin-bottom:40px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+        .cart-label{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase}
+        .qty-group{display:inline-flex;align-items:center;border:1px solid var(--border);overflow:hidden;transition:border-color .2s}
+        .qty-group:focus-within{border-color:var(--accent)}
+        .qty-input{width:70px;background:#0d1013;color:var(--text);border:none;padding:10px 12px;font-family:'IBM Plex Mono',monospace;font-size:14px;text-align:center;outline:none;-moz-appearance:textfield}
+        .qty-input::-webkit-outer-spin-button,.qty-input::-webkit-inner-spin-button{-webkit-appearance:none}
+        .btn-add{background:var(--accent);color:#000;border:none;padding:10px 28px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;cursor:pointer;transition:box-shadow .2s}
+        .btn-add:hover{box-shadow:0 0 20px rgba(245,166,35,.4)}
+        .in-cart-badge{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--green);border:1px solid var(--green);padding:8px 16px;letter-spacing:1px}
+        .section-title{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:3px;margin-bottom:24px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+        .section-id{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);border:1px solid var(--accent);padding:3px 8px;letter-spacing:2px;vertical-align:middle;margin-left:12px}
+        .comment-form{background:var(--surface);border:1px solid var(--border);padding:24px;margin-bottom:32px}
+        .form-title{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:16px}
+        .form-group{margin-bottom:16px}
+        .form-label{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:1px;display:block;margin-bottom:6px}
+        .form-input{width:100%;background:#0d1013;color:var(--text);border:1px solid var(--border);padding:10px 14px;font-family:'IBM Plex Sans',sans-serif;font-size:14px;outline:none;transition:border-color .2s;resize:vertical}
+        .form-input:focus{border-color:var(--accent)}
+        .stars-row{display:flex;gap:4px}
+        .star-btn{font-size:26px;cursor:pointer;color:var(--muted);background:none;border:none;padding:0 2px;line-height:1;transition:color .1s,transform .1s}
+        .star-btn:hover,.star-btn.active{color:var(--accent)}
+        .star-btn:hover{transform:scale(1.2)}
+        .btn-submit{background:var(--surface);color:var(--accent);border:1px solid var(--accent);padding:10px 24px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:2px;cursor:pointer;transition:background .2s,color .2s}
+        .btn-submit:hover{background:var(--accent);color:#000}
+        .comment-card{background:var(--surface);border:1px solid var(--border);padding:20px;margin-bottom:12px}
+        .comment-card.own{border-color:#2a3545}
+        .comment-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;gap:12px;flex-wrap:wrap}
+        .comment-author{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--accent);letter-spacing:1px}
+        .comment-date{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted)}
+        .comment-stars{font-size:0;letter-spacing:0}
+        .comment-stars .s-on{color:var(--accent);font-size:14px}
+        .comment-stars .s-off{color:var(--muted);font-size:14px}
+        .comment-text{color:var(--text);line-height:1.6;margin-bottom:12px}
+        .comment-actions{display:flex;gap:8px;flex-wrap:wrap}
+        .btn-sm{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;padding:5px 12px;border:1px solid;cursor:pointer;background:transparent}
+        .btn-edit{color:var(--muted);border-color:var(--border)} .btn-edit:hover{border-color:var(--accent);color:var(--accent)}
+        .btn-del{color:var(--muted);border-color:var(--border)} .btn-del:hover{border-color:var(--red);color:var(--red)}
+        .empty-comments{text-align:center;padding:40px;color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:1px;border:1px dashed var(--border)}
+        .edit-form{margin-top:16px;padding-top:16px;border-top:1px solid var(--border);display:none}
+        .edit-form.open{display:block}
+    </style>
+</head>
+<body>
+<div class="hazard-bar"></div>
+<header>
+    <div class="logo">Sandėliukas<span>WAREHOUSE MANAGEMENT SYSTEM</span></div>
+    <div class="header-sep"></div>
+    <a class="nav-link" th:href="@{/customer/cart}">🛒 Krepšelis</a>
+    <a class="nav-link" th:href="@{/customer/products}">Katalogas</a>
+    <a class="nav-link" th:href="@{/customer/menu}">Meniu</a>
+    <div class="header-badge">WMS v1.0</div>
+</header>
+<main>
+
+    <div th:if="${success}" class="flash flash-success"><span th:text="${success}"></span></div>
+    <div th:if="${error}"   class="flash flash-error"><span th:text="${error}"></span></div>
+
+    <div class="breadcrumb">
+        <a th:href="@{/customer/products}">Katalogas</a> › <span th:text="${product.name}"></span>
+    </div>
+
+    <div class="product-header">
+        <div class="product-id">PRD-<span th:text="${product.id}"></span></div>
+        <div class="product-name" th:text="${product.name}"></div>
+        <div class="product-meta">
+            <div class="meta-item">
+                <span class="meta-label">Kaina</span>
+                <span class="meta-value price"><span th:text="${#numbers.formatDecimal(product.supplierPrice,1,2)}"></span> €</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Sandėlyje</span>
+                <span class="meta-value"
+                      th:classappend="${product.initialStock < 5 ? 'stock-low' : 'stock-ok'}"
+                      th:text="${product.initialStock} + ' vnt.'"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="cart-section" th:if="${isInCart}">
+        <span class="cart-label">Krepšelis</span>
+        <span class="in-cart-badge">✓ Prekė jau jūsų krepšelyje</span>
+        <a class="nav-link" th:href="@{/customer/cart}">Peržiūrėti krepšelį →</a>
+    </div>
+
+    <div class="cart-section" th:unless="${isInCart}">
+        <span class="cart-label">Pridėti į krepšelį</span>
+        <form th:action="@{/customer/products/{id}/add-to-cart(id=${product.id})}" method="post" style="display:flex;align-items:center;gap:12px">
+            <div class="qty-group">
+                <input class="qty-input" type="number" name="quantity" value="1" min="1" th:max="${product.initialStock}">
+            </div>
+            <button class="btn-add" type="submit">+ Į krepšelį</button>
+        </form>
+    </div>
+
+    <h2 class="section-title">
+        Komentarai
+        <span class="section-id">COMMENTS</span>
+    </h2>
+
+    <div class="comment-form">
+        <div class="form-title">Palikti komentarą</div>
+        <form th:action="@{/customer/products/{id}/comments/new(id=${product.id})}" method="post">
+            <div class="form-group">
+                <label class="form-label">Tekstas</label>
+                <textarea class="form-input" name="text" rows="4" maxlength="2000" placeholder="Jūsų nuomonė apie prekę..."></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Įvertinimas</label>
+                <input type="hidden" name="rating" id="ratingValue" value="">
+                <div class="stars-row" id="newStars">
+                    <button type="button" class="star-btn" data-value="1">★</button>
+                    <button type="button" class="star-btn" data-value="2">★</button>
+                    <button type="button" class="star-btn" data-value="3">★</button>
+                    <button type="button" class="star-btn" data-value="4">★</button>
+                    <button type="button" class="star-btn" data-value="5">★</button>
+                </div>
+                <span id="ratingHint" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);margin-top:4px;display:block;letter-spacing:1px">Pasirinkite įvertinimą</span>
+            </div>
+            <button class="btn-submit" type="submit">Išsaugoti komentarą</button>
+        </form>
+    </div>
+
+    <div th:if="${#lists.isEmpty(comments)}" class="empty-comments">KOMENTARŲ DAR NĖRA — BŪKITE PIRMAS!</div>
+
+    <div th:each="comment : ${comments}"
+         class="comment-card"
+         th:classappend="${comment.buyer.email == buyerEmail ? ' own' : ''}">
+
+        <div class="comment-header">
+            <div>
+                <div class="comment-author" th:text="${comment.buyer.email}"></div>
+                <div class="comment-date" th:text="${comment.creationDate}"></div>
+            </div>
+            <div class="comment-stars"><span th:each="i : ${#numbers.sequence(1,5)}" th:class="${i <= comment.rating ? 's-on' : 's-off'}">★</span></div>
+        </div>
+
+        <div class="comment-text" th:text="${comment.text}"></div>
+
+        <div class="comment-actions" th:if="${comment.buyer.email == buyerEmail}">
+            <button class="btn-sm btn-edit"
+                    th:onclick="'toggleEdit(\'edit-' + ${comment.id} + '\')'">✎ Redaguoti</button>
+            <form th:action="@{/customer/products/{pid}/comments/{cid}/delete(pid=${product.id},cid=${comment.id})}" method="post" style="display:inline">
+                <button class="btn-sm btn-del" type="submit"
+                        onclick="return confirm('Ar tikrai norite ištrinti šį komentarą?')">✕ Trinti</button>
+            </form>
+        </div>
+
+        <div class="edit-form" th:id="'edit-' + ${comment.id}" th:if="${comment.buyer.email == buyerEmail}">
+            <form th:action="@{/customer/products/{pid}/comments/{cid}/edit(pid=${product.id},cid=${comment.id})}" method="post">
+                <div class="form-group">
+                    <label class="form-label">Redaguoti tekstą</label>
+                    <textarea class="form-input" name="text" rows="3" maxlength="2000" th:text="${comment.text}"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Naujas įvertinimas</label>
+                    <select class="form-input" name="rating" style="width:auto;cursor:pointer">
+                        <option value="5" th:selected="${comment.rating == 5}">★★★★★ (5)</option>
+                        <option value="4" th:selected="${comment.rating == 4}">★★★★☆ (4)</option>
+                        <option value="3" th:selected="${comment.rating == 3}">★★★☆☆ (3)</option>
+                        <option value="2" th:selected="${comment.rating == 2}">★★☆☆☆ (2)</option>
+                        <option value="1" th:selected="${comment.rating == 1}">★☆☆☆☆ (1)</option>
+                    </select>
+                </div>
+                <div style="display:flex;gap:8px">
+                    <button class="btn-submit" type="submit">Išsaugoti</button>
+                    <button class="btn-sm btn-edit" type="button"
+                            th:onclick="'toggleEdit(\'edit-' + ${comment.id} + '\')'">Atšaukti</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    (function () {
+        const stars  = Array.from(document.querySelectorAll('#newStars .star-btn'));
+        const hidden = document.getElementById('ratingValue');
+        const hint   = document.getElementById('ratingHint');
+        const labels = ['', '1 – Labai blogai', '2 – Blogai', '3 – Vidutiniškai', '4 – Gerai', '5 – Puikiai'];
+        let selected = 0;
+
+        function paint(hovered) {
+            const mark = hovered || selected;
+            stars.forEach((s, i) => s.classList.toggle('active', i < mark));
+        }
+
+        stars.forEach((s, i) => {
+            const val = i + 1;
+            s.addEventListener('mouseenter', () => paint(val));
+            s.addEventListener('mouseleave', () => paint(0));
+            s.addEventListener('click', () => {
+                selected = val;
+                hidden.value = val;
+                hint.textContent = labels[val];
+                paint(0);
+            });
+        });
+    })();
+
+    function toggleEdit(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('open');
+    }
+</script>
+</body>
+</html>
