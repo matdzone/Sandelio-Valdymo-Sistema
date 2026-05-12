@@ -16,24 +16,41 @@ public class ForecastController {
         this.forecastService = forecastService;
     }
 
+    // 3. requestForecastWindow()
     @GetMapping
     public String requestForecastWindow(Model model) {
-        forecastService.requestForecastWindow();
-        model.addAttribute("forecasts", forecastService.getForecastData());
+        model.addAttribute("forecasts", forecastService.requestForecastWindow());
         return "forecast/forecast-window";
     }
 
-    @PostMapping("/update")
-    public String submitForecastChanges(@RequestParam Integer forecastId,
-                                        @RequestParam Integer averageDemand,
-                                        @RequestParam Double seasonalityCoeff,
-                                        @RequestParam Integer reorderPoint,
-                                        @RequestParam Integer safetyStock,
-                                        @RequestParam Integer stockPosition,
-                                        @RequestParam Integer recommendedQuantity,
-                                        RedirectAttributes redirectAttributes) {
+    // 1. forecastReviewButton()
+    // 2. requestForecastWindow()
+    @PostMapping("/review")
+    public String forecastReviewButton(RedirectAttributes redirectAttributes) {
         try {
-            forecastService.updateForecastData(
+            forecastService.requestForecastWindow();
+            redirectAttributes.addFlashAttribute("success", "Paklausos prognozės langas atnaujintas");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+
+        return "redirect:/forecast";
+    }
+
+    // 5. editForecastButton()
+    // 6. submitForecastChanges()
+    // 7. updateForecastData()
+    @PostMapping("/update")
+    public String editForecastButton(@RequestParam Integer forecastId,
+                                     @RequestParam Integer averageDemand,
+                                     @RequestParam Double seasonalityCoeff,
+                                     @RequestParam Integer reorderPoint,
+                                     @RequestParam Integer safetyStock,
+                                     @RequestParam Integer stockPosition,
+                                     @RequestParam Integer recommendedQuantity,
+                                     RedirectAttributes redirectAttributes) {
+        try {
+            forecastService.submitForecastChanges(
                     forecastId,
                     averageDemand,
                     seasonalityCoeff,
@@ -43,11 +60,14 @@ public class ForecastController {
                     recommendedQuantity
             );
 
-            redirectAttributes.addFlashAttribute("success", "Prognozė atnaujinta");
+            // 8. forecastUpdated
+            redirectAttributes.addFlashAttribute("success", "forecastUpdated");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
 
+        // 9. showForecastWindow()
+        // 10. showForecast
         return "redirect:/forecast";
     }
 }

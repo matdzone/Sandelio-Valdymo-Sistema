@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Trūkstamų prekių sąrašas — Sandėliukas</title>
+
+    <style>
+        body {
+            background: #0f1112;
+            color: #dce3e8;
+            font-family: Arial, sans-serif;
+            margin: 0;
+        }
+
+        .hazard-bar {
+            height: 6px;
+            background: repeating-linear-gradient(
+                    -45deg,
+                    #f5a623 0px, #f5a623 12px,
+                    #1a1a1a 12px, #1a1a1a 24px
+            );
+        }
+
+        header {
+            background: #181c1e;
+            border-bottom: 1px solid #2a3035;
+            padding: 20px 40px;
+        }
+
+        h1 {
+            color: #f5a623;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        main {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+
+        .flash-success {
+            color: #2ecc71;
+            border-left: 3px solid #2ecc71;
+            padding: 12px;
+            background: rgba(46,204,113,.08);
+            margin-bottom: 20px;
+        }
+
+        .flash-error {
+            color: #e8380d;
+            border-left: 3px solid #e8380d;
+            padding: 12px;
+            background: rgba(232,56,13,.08);
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #2a3035;
+        }
+
+        th {
+            background: #181c1e;
+            color: #5a6672;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 1px;
+            padding: 14px;
+            text-align: left;
+        }
+
+        td {
+            padding: 14px;
+            border-top: 1px solid #2a3035;
+        }
+
+        tr:nth-child(even) {
+            background: #151a1c;
+        }
+
+        .btn {
+            background: #f5a623;
+            color: #000;
+            border: none;
+            padding: 9px 18px;
+            text-decoration: none;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .empty {
+            color: #5a6672;
+            border: 1px solid #2a3035;
+            padding: 40px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="hazard-bar"></div>
+
+<header>
+    <h1>Trūkstamų prekių užsakymų sąrašas</h1>
+</header>
+
+<main>
+
+    <div th:if="${success}" class="flash-success" th:text="${success}"></div>
+    <div th:if="${error}" class="flash-error" th:text="${error}"></div>
+
+    <div th:if="${#lists.isEmpty(lowStockItems)}" class="empty">
+        Trūkstamų prekių nėra.
+    </div>
+
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Prekė</th>
+            <th>Esamas likutis</th>
+            <th>Užsakymo data</th>
+            <th>Veiksmai</th>
+        </tr>
+
+        <tr th:each="item : ${lowStockItems}">
+            <td th:text="${item.id}"></td>
+            <td th:text="${item.product.name}"></td>
+            <td th:text="${item.product.currentStock}"></td>
+            <td th:text="${item.createdAt}"></td>
+            <td>
+                <a th:href="@{/reorder-products/{id}/order(id=${item.id})}">
+                    Užsakyti prekę
+                </a>
+            </td>
+        </tr>
+    </table>
+
+</main>
+
+</body>
+</html>

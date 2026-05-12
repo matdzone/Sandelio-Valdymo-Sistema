@@ -80,4 +80,51 @@ public class Order {
     public String getAdministratorEmail() {
         return administratorEmail;
     }
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public void setArrivingQuantity(Integer arrivingQuantity) {
+        this.arrivingQuantity = arrivingQuantity;
+    }
+
+    public void setOrderDate(LocalDate orderDate) {
+        this.orderDate = orderDate;
+    }
+
+    public void setArrivalDate(LocalDate arrivalDate) {
+        this.arrivalDate = arrivalDate;
+    }
+
+    public void setDepartureDate(LocalDate departureDate) {
+        this.departureDate = departureDate;
+    }
+
+    public void setDeliveryDuration(Integer deliveryDuration) {
+        this.deliveryDuration = deliveryDuration;
+    }
+
+    public void setReceived(Integer received) {
+        this.received = received;
+    }
+
+    public void setSold(Integer sold) {
+        this.sold = sold;
+    }
+
+    public void setReservationDate(LocalDate reservationDate) {
+        this.reservationDate = reservationDate;
+    }
+
+    public void setCondition(Integer condition) {
+        this.condition = condition;
+    }
+
+    public void setPaymentStatus(Integer paymentStatus) {
+        this.paymentStatus = paymentStatus;
+    }
+
+    public void setAdministratorEmail(String administratorEmail) {
+        this.administratorEmail = administratorEmail;
+    }
 }

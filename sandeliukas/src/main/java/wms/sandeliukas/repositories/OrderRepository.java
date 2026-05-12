@@ -40,6 +40,7 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
             WHERE op.fk_Product = :productId
             """, nativeQuery = true)
     Integer incomingStock(Integer productId);
+
     @Query(value = """
         SELECT COALESCE(AVG(o.deliveryDuration), 7)
         FROM `Order` o
@@ -48,4 +49,10 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
           AND o.deliveryDuration IS NOT NULL
         """, nativeQuery = true)
     Double averageLeadTimeDays(Integer productId);
+
+    @Query(value = """
+            SELECT COALESCE(MAX(id), 0)
+            FROM `Order`
+            """, nativeQuery = true)
+    Integer findMaxId();
 }

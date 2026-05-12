@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Užsakyti trūkstamą prekę — Sandėliukas</title>
+
+    <style>
+        body {
+            background: #0f1112;
+            color: #dce3e8;
+            font-family: Arial, sans-serif;
+            margin: 0;
+        }
+
+        .hazard-bar {
+            height: 6px;
+            background: repeating-linear-gradient(
+                    -45deg,
+                    #f5a623 0px, #f5a623 12px,
+                    #1a1a1a 12px, #1a1a1a 24px
+            );
+        }
+
+        header {
+            background: #181c1e;
+            border-bottom: 1px solid #2a3035;
+            padding: 20px 40px;
+        }
+
+        h1 {
+            color: #f5a623;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        main {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+
+        .card {
+            background: #181c1e;
+            border: 1px solid #2a3035;
+            padding: 28px;
+        }
+
+        .field {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            color: #5a6672;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        input {
+            width: 100%;
+            background: #0d1013;
+            color: #dce3e8;
+            border: 1px solid #2a3035;
+            padding: 12px;
+            font-size: 15px;
+        }
+
+        .readonly {
+            padding: 12px;
+            background: #0d1013;
+            border: 1px solid #2a3035;
+        }
+
+        .btn {
+            background: #f5a623;
+            color: #000;
+            border: none;
+            padding: 12px 28px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-right: 12px;
+        }
+
+        .btn-secondary {
+            color: #dce3e8;
+            text-decoration: none;
+            border: 1px solid #2a3035;
+            padding: 11px 24px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="hazard-bar"></div>
+
+<header>
+    <h1>Užsakyti trūkstamą prekę</h1>
+</header>
+
+<main>
+
+    <div class="card">
+        <div class="field">
+            <label>Prekė</label>
+            <div class="readonly" th:text="${product.name}"></div>
+        </div>
+
+        <div class="field">
+            <label>Esamas likutis</label>
+            <div class="readonly" th:text="${product.currentStock}"></div>
+        </div>
+
+        <form th:action="@{/reorder-products/{id}/order(id=${lowStockItem.id})}" method="post">
+            <div class="field">
+                <label>Užsakomas kiekis</label>
+                <input type="number" name="orderQuantity" min="1" required>
+            </div>
+
+            <button class="btn" type="submit">Patvirtinti užsakymą</button>
+            <a class="btn-secondary" th:href="@{/reorder-products}">Grįžti</a>
+        </form>
+    </div>
+
+</main>
+
+</body>
+</html>

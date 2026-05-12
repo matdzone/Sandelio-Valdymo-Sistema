@@ -7,12 +7,13 @@ import wms.sandeliukas.model.LowStockItem;
 import wms.sandeliukas.model.Product;
 import wms.sandeliukas.repositories.ForecastRepository;
 import wms.sandeliukas.repositories.LowStockItemRepository;
-import wms.sandeliukas.repositories.ProductRepository;
 import wms.sandeliukas.repositories.OrderRepository;
-import java.util.concurrent.CompletableFuture;
+import wms.sandeliukas.repositories.ProductRepository;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class ForecastService {
@@ -32,25 +33,31 @@ public class ForecastService {
         this.lowStockItemRepository = lowStockItemRepository;
     }
 
+    // Peržiūrėti prekių paklausos prognozę
+    // 3. requestForecastWindow()
+    public List<Forecast> requestForecastWindow() {
+        analyzeSalesHistory();          // ref: Analizuoti pardavimų istoriją
+        determineSeasonality();         // ref: Nustatyti sezoniškumą
+        calculateInventoryBalance();    // ref: Skaičiuoti atsargos likutį
+
+        // par blokas diagramoje
+        CompletableFuture<Void> determineMissingProducts =
+                CompletableFuture.runAsync(this::determineMissingProductsByReorderPoint);
+
+        CompletableFuture<Void> planReplenishment =
+                CompletableFuture.runAsync(this::planInventoryReplenishment);
+
+        CompletableFuture.allOf(determineMissingProducts, planReplenishment).join();
+
+        return getForecastData();
+    }
+
+    // getForecastData()
     public List<Forecast> getForecastData() {
         return forecastRepository.findAll();
     }
 
-
-    public void requestForecastWindow() {
-        analyzeSalesHistory();
-        determineSeasonality();
-        calculateInventoryBalance();
-
-        CompletableFuture<Void> determineMissingProducts =
-                CompletableFuture.runAsync(() -> determineMissingProductsByReorderPoint());
-
-        CompletableFuture<Void> planReplenishment =
-                CompletableFuture.runAsync(() -> planInventoryReplenishment());
-
-        CompletableFuture.allOf(determineMissingProducts, planReplenishment).join();
-    }
-
+    // Analizuoti pardavimų istoriją
     @Transactional
     public void analyzeSalesHistory() {
         List<Product> products = productRepository.findAll();
@@ -58,20 +65,45 @@ public class ForecastService {
         for (Product product : products) {
             Forecast forecast = getOrCreateForecast(product);
 
-            Integer totalSold = orderRepository.getTotalSold(product.getId());
-            Integer months = orderRepository.countSalesMonths(product.getId());
+            // 1. DataRequestOrder()
+            Integer totalSold = dataRequestOrder(product.getId());
 
-            int averageDemand = 0;
+            // 3. OrderByTimeFrame()
+            Integer months = orderByTimeFrame(product.getId());
 
-            if (months != null && months > 0) {
-                averageDemand = (int) Math.round(totalSold / (double) months);
-            }
+            // 4. OrderAggregationByTimeFrame()
+            Integer aggregatedSales = orderAggregationByTimeFrame(totalSold);
 
+            // 5. AverageDemand()
+            int averageDemand = averageDemand(aggregatedSales, months);
+
+            // 6. AverageDemand()
             forecast.setAverageDemand(averageDemand);
             forecastRepository.save(forecast);
         }
     }
 
+    private Integer dataRequestOrder(Integer productId) {
+        return orderRepository.getTotalSold(productId);
+    }
+
+    private Integer orderByTimeFrame(Integer productId) {
+        return orderRepository.countSalesMonths(productId);
+    }
+
+    private Integer orderAggregationByTimeFrame(Integer totalSold) {
+        return totalSold != null ? totalSold : 0;
+    }
+
+    private int averageDemand(Integer totalSold, Integer months) {
+        if (months == null || months <= 0) {
+            return 0;
+        }
+
+        return (int) Math.round(totalSold / (double) months);
+    }
+
+    // Nustatyti sezoniškumą
     @Transactional
     public void determineSeasonality() {
         List<Product> products = productRepository.findAll();
@@ -79,45 +111,87 @@ public class ForecastService {
         for (Product product : products) {
             Forecast forecast = getOrCreateForecast(product);
 
-            Integer monthCount = orderRepository.countSalesMonths(product.getId());
+            // 1. getSalesData()
+            Integer totalSold = getSalesData(product.getId());
+
+            // 3. aggregateSalesByMonth()
+            Integer monthCount = aggregateSalesByMonth(product.getId());
 
             if (monthCount == null || monthCount < 6) {
-                forecast.setSeasonalityCoeff(1.0);
-                forecastRepository.save(forecast);
+                // 9. setSeasonalityCoefficient()
+                setSeasonalityCoefficient(forecast, 1.0);
                 continue;
             }
 
-            Integer totalSold = orderRepository.getTotalSold(product.getId());
-            Integer periodSold = orderRepository.getPeriodSold(
-                    product.getId(),
-                    forecast.getPeriodStart(),
-                    forecast.getPeriodEnd()
-            );
+            // 4. calculateOverallAverage()
+            double overallAverage = calculateOverallAverage(totalSold, monthCount);
 
-            double overallAverage = totalSold / (double) monthCount;
+            // 5. calculatePeriodAverage()
+            double periodAverage = calculatePeriodAverage(product.getId(), forecast);
 
-            long periodMonths = java.time.temporal.ChronoUnit.MONTHS.between(
-                    forecast.getPeriodStart().withDayOfMonth(1),
-                    forecast.getPeriodEnd().withDayOfMonth(1)
-            ) + 1;
+            // 6. calculateSeasonalityCoefficient()
+            double coefficient = calculateSeasonalityCoefficient(overallAverage, periodAverage);
 
-            double periodAverage = periodSold / (double) periodMonths;
-
-            double coefficient;
-
-            if (overallAverage == 0) {
-                coefficient = 1.0;
-            } else {
-                coefficient = periodAverage / overallAverage;
-            }
-
-            coefficient = Math.round(coefficient * 100.0) / 100.0;
-
-            forecast.setSeasonalityCoeff(coefficient);
-            forecastRepository.save(forecast);
+            // 7. saveSeasonalityCoefficient()
+            saveSeasonalityCoefficient(forecast, coefficient);
         }
     }
 
+    private Integer getSalesData(Integer productId) {
+        return orderRepository.getTotalSold(productId);
+    }
+
+    private Integer aggregateSalesByMonth(Integer productId) {
+        return orderRepository.countSalesMonths(productId);
+    }
+
+    private double calculateOverallAverage(Integer totalSold, Integer monthCount) {
+        if (monthCount == null || monthCount == 0) {
+            return 0;
+        }
+
+        return totalSold / (double) monthCount;
+    }
+
+    private double calculatePeriodAverage(Integer productId, Forecast forecast) {
+        Integer periodSold = orderRepository.getPeriodSold(
+                productId,
+                forecast.getPeriodStart(),
+                forecast.getPeriodEnd()
+        );
+
+        long periodMonths = ChronoUnit.MONTHS.between(
+                forecast.getPeriodStart().withDayOfMonth(1),
+                forecast.getPeriodEnd().withDayOfMonth(1)
+        ) + 1;
+
+        if (periodMonths <= 0) {
+            return 0;
+        }
+
+        return periodSold / (double) periodMonths;
+    }
+
+    private double calculateSeasonalityCoefficient(double overallAverage, double periodAverage) {
+        if (overallAverage == 0) {
+            return 1.0;
+        }
+
+        double coefficient = periodAverage / overallAverage;
+        return Math.round(coefficient * 100.0) / 100.0;
+    }
+
+    private void saveSeasonalityCoefficient(Forecast forecast, double coefficient) {
+        forecast.setSeasonalityCoeff(coefficient);
+        forecastRepository.save(forecast);
+    }
+
+    private void setSeasonalityCoefficient(Forecast forecast, double coefficient) {
+        forecast.setSeasonalityCoeff(coefficient);
+        forecastRepository.save(forecast);
+    }
+
+    // Skaičiuoti atsargos likutį
     @Transactional
     public void calculateInventoryBalance() {
         List<Product> products = productRepository.findAll();
@@ -125,97 +199,188 @@ public class ForecastService {
         for (Product product : products) {
             Forecast forecast = getOrCreateForecast(product);
 
-            int currentStock = product.getCurrentStock() != null ? product.getCurrentStock() : 0;
-            Integer incoming = orderRepository.incomingStock(product.getId());
-            int incomingStock = incoming != null ? incoming : 0;
+            // 1. getProductData()
+            Product productData = getProductData(product.getId());
 
-            int stockPosition = currentStock + incomingStock;
+            // 3. getOrdersData()
+            Integer ordersData = getOrdersData(product.getId());
 
-            forecast.setStockPosition(stockPosition);
-            forecastRepository.save(forecast);
+            // 5. calculateCurrentStock()
+            int currentStock = calculateCurrentStock(productData);
+
+            // 6. saveCurrentStock()
+            saveCurrentStock(productData, currentStock);
+
+            // 8. calculateStockPosition()
+            int stockPosition = calculateStockPosition(currentStock, ordersData);
+
+            // 9. saveStockPosition()
+            saveStockPosition(forecast, stockPosition);
         }
     }
 
+    private Product getProductData(Integer productId) {
+        return productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Prekė nerasta"));
+    }
+
+    private Integer getOrdersData(Integer productId) {
+        return orderRepository.incomingStock(productId);
+    }
+
+    private int calculateCurrentStock(Product product) {
+        return product.getCurrentStock() != null ? product.getCurrentStock() : 0;
+    }
+
+    private void saveCurrentStock(Product product, int currentStock) {
+        product.setCurrentStock(currentStock);
+        productRepository.save(product);
+    }
+
+    private int calculateStockPosition(int currentStock, Integer incomingStock) {
+        int incoming = incomingStock != null ? incomingStock : 0;
+        return currentStock + incoming;
+    }
+
+    private void saveStockPosition(Forecast forecast, int stockPosition) {
+        forecast.setStockPosition(stockPosition);
+        forecastRepository.save(forecast);
+    }
+
+    // Nustatyti trūkstamas prekes pagal užsakymo tašką
     @Transactional
     public void determineMissingProductsByReorderPoint() {
-        List<Forecast> forecasts = forecastRepository.findAll();
+
+        List<Forecast> forecasts = getForecastData();
 
         for (Forecast forecast : forecasts) {
+
             Product product = forecast.getProduct();
 
-            int averageDemand = forecast.getAverageDemand() != null
-                    ? forecast.getAverageDemand()
-                    : 0;
+            // 3. getStockPositionData()
+            int stockPositionData = getStockPositionData(forecast);
 
-            int stockPosition = forecast.getStockPosition() != null
-                    ? forecast.getStockPosition()
-                    : 0;
+            // 5. calculateReorderPoint()
+            int reorderPoint = calculateReorderPoint(forecast, product);
 
-            int safetyStock = forecast.getSafetyStock() != null
-                    ? forecast.getSafetyStock()
-                    : 0;
+            // 6. saveReorderPoint()
+            saveReorderPoint(forecast, reorderPoint);
 
-            Double leadTimeValue = orderRepository.averageLeadTimeDays(product.getId());
-            int leadTime = leadTimeValue != null
-                    ? (int) Math.round(leadTimeValue)
-                    : 0;
+            // alt
+            if (reorderPoint > stockPositionData) {
 
-            int reorderPoint = averageDemand * leadTime + safetyStock;
-
-            forecast.setReorderPoint(reorderPoint);
-            forecastRepository.save(forecast);
-
-            if (stockPosition < reorderPoint) {
+                // 8. createMissingProduct()
                 createMissingProduct(product);
+
             } else {
+
+                // 10. ensureProductNotMissing()
                 ensureProductNotMissing(product);
             }
         }
     }
 
+    // 3. getStockPositionData()
+    private int getStockPositionData(Forecast forecast) {
+
+        return forecast.getStockPosition() != null
+                ? forecast.getStockPosition()
+                : 0;
+    }
+
+    private int calculateReorderPoint(Forecast forecast, Product product) {
+        int averageDemand = forecast.getAverageDemand() != null ? forecast.getAverageDemand() : 0;
+        int safetyStock = forecast.getSafetyStock() != null ? forecast.getSafetyStock() : 0;
+
+        Double leadTimeValue = orderRepository.averageLeadTimeDays(product.getId());
+        double leadTimeDays = leadTimeValue != null ? leadTimeValue : 0.0;
+
+        return (int) Math.ceil(
+                averageDemand * (leadTimeDays / 30.0) + safetyStock
+        );
+    }
+
+    private void saveReorderPoint(Forecast forecast, int reorderPoint) {
+        forecast.setReorderPoint(reorderPoint);
+        forecastRepository.save(forecast);
+    }
+
+    // Planuoti prekių atsargų papildymą
     @Transactional
     public void planInventoryReplenishment() {
-        List<Forecast> forecasts = forecastRepository.findAll();
+        List<Forecast> forecasts = getForecastData();
 
         for (Forecast forecast : forecasts) {
-            Product product = forecast.getProduct();
+            // 3. calculateForecastDemand()
+            int forecastDemand = calculateForecastDemand(forecast);
 
-            int averageDemand = forecast.getAverageDemand() != null
-                    ? forecast.getAverageDemand()
-                    : 0;
+            // 4. calculateTargetStockLevel()
+            int targetStockLevel = calculateTargetStockLevel(forecast, forecastDemand);
 
-            double seasonalityCoeff = forecast.getSeasonalityCoeff() != null
-                    ? forecast.getSeasonalityCoeff()
-                    : 1.0;
+            // 5. calculateRecommendedOrderQuantity()
+            int recommendedOrderQuantity = calculateRecommendedOrderQuantity(forecast, targetStockLevel);
 
-            int safetyStock = forecast.getSafetyStock() != null
-                    ? forecast.getSafetyStock()
-                    : 0;
-
-            int stockPosition = forecast.getStockPosition() != null
-                    ? forecast.getStockPosition()
-                    : 0;
-
-            Double leadTimeValue = orderRepository.averageLeadTimeDays(product.getId());
-            int leadTime = leadTimeValue != null
-                    ? (int) Math.round(leadTimeValue)
-                    : 0;
-
-            int forecastDemand = (int) Math.ceil(averageDemand * seasonalityCoeff * leadTime);
-
-            int targetStockLevel = forecastDemand + safetyStock;
-
-            int recommendedOrderQuantity = targetStockLevel - stockPosition;
-
-            if (recommendedOrderQuantity < 0) {
-                recommendedOrderQuantity = 0;
+            // alt
+            if (recommendedOrderQuantity > 0) {
+                // 6. saveRecommendedOrderQuantity()
+                saveRecommendedOrderQuantity(forecast, recommendedOrderQuantity);
+            } else {
+                // 8. saveRecommendedOrderQuantity()
+                saveRecommendedOrderQuantity(forecast, 0);
             }
-
-            forecast.setRecommendedQuantity(recommendedOrderQuantity);
-            forecastRepository.save(forecast);
         }
     }
 
+    private int calculateForecastDemand(Forecast forecast) {
+        Product product = forecast.getProduct();
+
+        int averageDemand = forecast.getAverageDemand() != null ? forecast.getAverageDemand() : 0;
+        double seasonalityCoeff = forecast.getSeasonalityCoeff() != null ? forecast.getSeasonalityCoeff() : 1.0;
+
+        Double leadTimeValue = orderRepository.averageLeadTimeDays(product.getId());
+        double leadTimeDays = leadTimeValue != null ? leadTimeValue : 0.0;
+
+        return (int) Math.ceil(
+                averageDemand * seasonalityCoeff * (leadTimeDays / 30.0)
+        );
+    }
+
+    private int calculateTargetStockLevel(Forecast forecast, int forecastDemand) {
+        int safetyStock = forecast.getSafetyStock() != null ? forecast.getSafetyStock() : 0;
+        return forecastDemand + safetyStock;
+    }
+
+    private int calculateRecommendedOrderQuantity(Forecast forecast, int targetStockLevel) {
+        int stockPosition = forecast.getStockPosition() != null ? forecast.getStockPosition() : 0;
+        return targetStockLevel - stockPosition;
+    }
+
+    private void saveRecommendedOrderQuantity(Forecast forecast, int recommendedOrderQuantity) {
+        forecast.setRecommendedQuantity(Math.max(recommendedOrderQuantity, 0));
+        forecastRepository.save(forecast);
+    }
+
+    // 6. submitForecastChanges()
+    @Transactional
+    public void submitForecastChanges(Integer forecastId,
+                                      Integer averageDemand,
+                                      Double seasonalityCoeff,
+                                      Integer reorderPoint,
+                                      Integer safetyStock,
+                                      Integer stockPosition,
+                                      Integer recommendedQuantity) {
+        updateForecastData(
+                forecastId,
+                averageDemand,
+                seasonalityCoeff,
+                reorderPoint,
+                safetyStock,
+                stockPosition,
+                recommendedQuantity
+        );
+    }
+
+    // 7. updateForecastData()
     @Transactional
     public void updateForecastData(Integer forecastId,
                                    Integer averageDemand,

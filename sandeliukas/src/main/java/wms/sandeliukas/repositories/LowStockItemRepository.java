@@ -12,4 +12,6 @@ public interface LowStockItemRepository extends JpaRepository<LowStockItem, Inte
 
     @Query("select coalesce(max(l.id), 0) from LowStockItem l")
     Integer findMaxId();
+
+    void deleteByProductId(Integer productId);
 }
