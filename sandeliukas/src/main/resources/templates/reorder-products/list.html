@@ -115,7 +115,7 @@
         Trūkstamų prekių nėra.
     </div>
 
-    <table>
+    <table th:unless="${#lists.isEmpty(lowStockItems)}">
         <tr>
             <th>ID</th>
             <th>Prekė</th>
