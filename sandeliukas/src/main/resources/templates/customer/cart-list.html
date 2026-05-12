@@ -328,6 +328,75 @@
         }
 
         .btn-purchase:active { transform: translateY(0); }
+
+        .reserved-section {
+            margin-top: 48px;
+        }
+
+        .reserved-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 32px;
+            letter-spacing: 4px;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+
+        .reserved-subtitle {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: var(--muted);
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .reserved-card {
+            background: var(--surface);
+            border: 1px solid #2a3545;
+            padding: 20px 24px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .reserved-info { display: flex; gap: 32px; flex-wrap: wrap; align-items: center; }
+
+        .res-field { display: flex; flex-direction: column; gap: 3px; }
+        .res-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+        .res-value { font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: var(--text); }
+        .res-value.id { color: var(--accent); font-size: 16px; font-weight: 600; }
+
+        .timer-badge {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            padding: 4px 10px;
+            letter-spacing: 1px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
+
+        .btn-pay {
+            background: var(--green);
+            color: #000;
+            border: none;
+            padding: 12px 32px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 18px;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: box-shadow .2s, transform .1s;
+            white-space: nowrap;
+        }
+
+        .btn-pay:hover { box-shadow: 0 0 24px rgba(46,204,113,.4); transform: translateY(-1px); }
+        .btn-pay:active { transform: translateY(0); }
     </style>
 </head>
 <body>
@@ -340,6 +409,8 @@
         <span>WAREHOUSE MANAGEMENT SYSTEM</span>
     </div>
     <div class="header-sep"></div>
+    <a style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);text-decoration:none;border:1px solid var(--accent);padding:4px 12px;letter-spacing:1px" th:href="@{/customer/products}">Katalogas</a>
+    <a style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);text-decoration:none;border:1px solid var(--accent);padding:4px 12px;letter-spacing:1px" th:href="@{/customer/menu}">Meniu</a>
     <div class="header-badge">WMS v1.0</div>
 </header>
 
@@ -386,7 +457,6 @@
                         <span th:text="${#numbers.formatDecimal(item.product.supplierPrice, 1, 2)}"></span> €
                     </td>
                     <td>
-                        <!-- 7. newAmountConfirmButton -->
                         <form th:action="@{/customer/cart/change-amount}" method="post" style="display:inline;">
                             <input type="hidden" name="cartItemId" th:value="${item.id}">
                             <div class="qty-group">
@@ -400,7 +470,6 @@
                         <span th:text="${#numbers.formatDecimal(item.product.supplierPrice * item.quantity, 1, 2)}"></span> €
                     </td>
                     <td class="td-actions">
-                        <!-- 1. deleteItemButton -->
                         <form th:action="@{/customer/cart/delete}" method="post" style="display:inline;">
                             <input type="hidden" name="cartItemId" th:value="${item.id}">
                             <button class="btn-delete" type="submit">✕ Šalinti</button>
@@ -411,7 +480,6 @@
             </table>
         </div>
 
-        <!-- Footer su suma ir pirkimo mygtuku -->
         <div class="cart-footer">
             <div>
                 <span class="total-label">Bendra suma</span>
@@ -423,13 +491,42 @@
                 <span class="item-count">
                     Prekių: <strong th:text="${#lists.size(cartItems)}"></strong>
                 </span>
-                <!-- 8. purchaseButton → 9. requestPurchase() -->
                 <form th:action="@{/customer/cart/reserve}" method="post">
                     <button class="btn-purchase" type="submit">Pirkti →</button>
                 </form>
             </div>
         </div>
 
+    </div>
+
+    <div class="reserved-section" th:if="${not #lists.isEmpty(reservedPurchases)}">
+        <div class="reserved-title">Rezervuoti pirkimai</div>
+        <div class="reserved-subtitle">
+            LAUKIA APMOKĖJIMO &nbsp;|&nbsp; REZERVAVIMO LAIKAS: 20 MIN.
+        </div>
+
+        <div th:each="purchase : ${reservedPurchases}" class="reserved-card">
+            <div class="reserved-info">
+                <div class="res-field">
+                    <span class="res-label">Pirkimo Nr.</span>
+                    <span class="res-value id">#<span th:text="${purchase.id}"></span></span>
+                </div>
+                <div class="res-field">
+                    <span class="res-label">Rezervuota</span>
+                    <span class="res-value" th:text="${purchase.reservationDate}"></span>
+                </div>
+                <div class="res-field">
+                    <span class="res-label">Statusas</span>
+                    <span class="res-value">Laukia apmokėjimo</span>
+                </div>
+                <span class="timer-badge">⏱ 20 MIN</span>
+            </div>
+
+            <form th:action="@{/customer/cart/confirm-payment}" method="post">
+                <input type="hidden" name="purchaseId" th:value="${purchase.id}">
+                <button class="btn-pay" type="submit">Apmokėti →</button>
+            </form>
+        </div>
     </div>
 
 </main>
