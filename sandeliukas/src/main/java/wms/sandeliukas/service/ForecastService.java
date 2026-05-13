@@ -48,7 +48,9 @@ public class ForecastService {
 
         return getForecastData();
     }
-
+    public List<Forecast> showForecastWindow() {
+        return getForecastData();
+    }
     public List<Forecast> getForecastData() {
         return forecastRepository.findAll();
     }

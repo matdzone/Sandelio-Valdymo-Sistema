@@ -18,7 +18,8 @@ public class ForecastController {
 
     @GetMapping
     public String requestForecastWindow(Model model) {
-        model.addAttribute("forecasts", forecastService.requestForecastWindow());
+        forecastService.requestForecastWindow();
+        model.addAttribute("forecasts", forecastService.showForecastWindow());
         return "forecast/forecast-window";
     }
 
