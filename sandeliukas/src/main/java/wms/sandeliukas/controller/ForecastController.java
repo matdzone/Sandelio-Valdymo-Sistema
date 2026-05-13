@@ -16,15 +16,12 @@ public class ForecastController {
         this.forecastService = forecastService;
     }
 
-    // 3. requestForecastWindow()
     @GetMapping
     public String requestForecastWindow(Model model) {
         model.addAttribute("forecasts", forecastService.requestForecastWindow());
         return "forecast/forecast-window";
     }
 
-    // 1. forecastReviewButton()
-    // 2. requestForecastWindow()
     @PostMapping("/review")
     public String forecastReviewButton(RedirectAttributes redirectAttributes) {
         try {
@@ -37,9 +34,6 @@ public class ForecastController {
         return "redirect:/forecast";
     }
 
-    // 5. editForecastButton()
-    // 6. submitForecastChanges()
-    // 7. updateForecastData()
     @PostMapping("/update")
     public String editForecastButton(@RequestParam Integer forecastId,
                                      @RequestParam Integer averageDemand,
@@ -60,14 +54,11 @@ public class ForecastController {
                     recommendedQuantity
             );
 
-            // 8. forecastUpdated
             redirectAttributes.addFlashAttribute("success", "forecastUpdated");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
 
-        // 9. showForecastWindow()
-        // 10. showForecast
         return "redirect:/forecast";
     }
 }

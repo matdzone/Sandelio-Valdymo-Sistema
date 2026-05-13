@@ -33,14 +33,11 @@ public class ForecastService {
         this.lowStockItemRepository = lowStockItemRepository;
     }
 
-    // Peržiūrėti prekių paklausos prognozę
-    // 3. requestForecastWindow()
     public List<Forecast> requestForecastWindow() {
-        analyzeSalesHistory();          // ref: Analizuoti pardavimų istoriją
-        determineSeasonality();         // ref: Nustatyti sezoniškumą
-        calculateInventoryBalance();    // ref: Skaičiuoti atsargos likutį
+        analyzeSalesHistory();
+        determineSeasonality();
+        calculateInventoryBalance();
 
-        // par blokas diagramoje
         CompletableFuture<Void> determineMissingProducts =
                 CompletableFuture.runAsync(this::determineMissingProductsByReorderPoint);
 
@@ -52,12 +49,10 @@ public class ForecastService {
         return getForecastData();
     }
 
-    // getForecastData()
     public List<Forecast> getForecastData() {
         return forecastRepository.findAll();
     }
 
-    // Analizuoti pardavimų istoriją
     @Transactional
     public void analyzeSalesHistory() {
         List<Product> products = productRepository.findAll();
@@ -65,19 +60,14 @@ public class ForecastService {
         for (Product product : products) {
             Forecast forecast = getOrCreateForecast(product);
 
-            // 1. DataRequestOrder()
             Integer totalSold = dataRequestOrder(product.getId());
 
-            // 3. OrderByTimeFrame()
             Integer months = orderByTimeFrame(product.getId());
 
-            // 4. OrderAggregationByTimeFrame()
             Integer aggregatedSales = orderAggregationByTimeFrame(totalSold);
 
-            // 5. AverageDemand()
             int averageDemand = averageDemand(aggregatedSales, months);
 
-            // 6. AverageDemand()
             forecast.setAverageDemand(averageDemand);
             forecastRepository.save(forecast);
         }
@@ -103,7 +93,6 @@ public class ForecastService {
         return (int) Math.round(totalSold / (double) months);
     }
 
-    // Nustatyti sezoniškumą
     @Transactional
     public void determineSeasonality() {
         List<Product> products = productRepository.findAll();
@@ -111,28 +100,21 @@ public class ForecastService {
         for (Product product : products) {
             Forecast forecast = getOrCreateForecast(product);
 
-            // 1. getSalesData()
             Integer totalSold = getSalesData(product.getId());
 
-            // 3. aggregateSalesByMonth()
             Integer monthCount = aggregateSalesByMonth(product.getId());
 
             if (monthCount == null || monthCount < 6) {
-                // 9. setSeasonalityCoefficient()
                 setSeasonalityCoefficient(forecast, 1.0);
                 continue;
             }
 
-            // 4. calculateOverallAverage()
             double overallAverage = calculateOverallAverage(totalSold, monthCount);
 
-            // 5. calculatePeriodAverage()
             double periodAverage = calculatePeriodAverage(product.getId(), forecast);
 
-            // 6. calculateSeasonalityCoefficient()
             double coefficient = calculateSeasonalityCoefficient(overallAverage, periodAverage);
 
-            // 7. saveSeasonalityCoefficient()
             saveSeasonalityCoefficient(forecast, coefficient);
         }
     }
@@ -191,7 +173,6 @@ public class ForecastService {
         forecastRepository.save(forecast);
     }
 
-    // Skaičiuoti atsargos likutį
     @Transactional
     public void calculateInventoryBalance() {
         List<Product> products = productRepository.findAll();
@@ -199,22 +180,16 @@ public class ForecastService {
         for (Product product : products) {
             Forecast forecast = getOrCreateForecast(product);
 
-            // 1. getProductData()
             Product productData = getProductData(product.getId());
 
-            // 3. getOrdersData()
             Integer ordersData = getOrdersData(product.getId());
 
-            // 5. calculateCurrentStock()
             int currentStock = calculateCurrentStock(productData);
 
-            // 6. saveCurrentStock()
             saveCurrentStock(productData, currentStock);
 
-            // 8. calculateStockPosition()
             int stockPosition = calculateStockPosition(currentStock, ordersData);
 
-            // 9. saveStockPosition()
             saveStockPosition(forecast, stockPosition);
         }
     }
@@ -247,7 +222,6 @@ public class ForecastService {
         forecastRepository.save(forecast);
     }
 
-    // Nustatyti trūkstamas prekes pagal užsakymo tašką
     @Transactional
     public void determineMissingProductsByReorderPoint() {
 
@@ -257,30 +231,23 @@ public class ForecastService {
 
             Product product = forecast.getProduct();
 
-            // 3. getStockPositionData()
             int stockPositionData = getStockPositionData(forecast);
 
-            // 5. calculateReorderPoint()
             int reorderPoint = calculateReorderPoint(forecast, product);
 
-            // 6. saveReorderPoint()
             saveReorderPoint(forecast, reorderPoint);
 
-            // alt
             if (reorderPoint > stockPositionData) {
 
-                // 8. createMissingProduct()
                 createMissingProduct(product);
 
             } else {
 
-                // 10. ensureProductNotMissing()
                 ensureProductNotMissing(product);
             }
         }
     }
 
-    // 3. getStockPositionData()
     private int getStockPositionData(Forecast forecast) {
 
         return forecast.getStockPosition() != null
@@ -305,27 +272,21 @@ public class ForecastService {
         forecastRepository.save(forecast);
     }
 
-    // Planuoti prekių atsargų papildymą
     @Transactional
     public void planInventoryReplenishment() {
         List<Forecast> forecasts = getForecastData();
 
         for (Forecast forecast : forecasts) {
-            // 3. calculateForecastDemand()
+
             int forecastDemand = calculateForecastDemand(forecast);
 
-            // 4. calculateTargetStockLevel()
             int targetStockLevel = calculateTargetStockLevel(forecast, forecastDemand);
 
-            // 5. calculateRecommendedOrderQuantity()
             int recommendedOrderQuantity = calculateRecommendedOrderQuantity(forecast, targetStockLevel);
 
-            // alt
             if (recommendedOrderQuantity > 0) {
-                // 6. saveRecommendedOrderQuantity()
                 saveRecommendedOrderQuantity(forecast, recommendedOrderQuantity);
             } else {
-                // 8. saveRecommendedOrderQuantity()
                 saveRecommendedOrderQuantity(forecast, 0);
             }
         }
@@ -360,7 +321,6 @@ public class ForecastService {
         forecastRepository.save(forecast);
     }
 
-    // 6. submitForecastChanges()
     @Transactional
     public void submitForecastChanges(Integer forecastId,
                                       Integer averageDemand,
@@ -380,7 +340,6 @@ public class ForecastService {
         );
     }
 
-    // 7. updateForecastData()
     @Transactional
     public void updateForecastData(Integer forecastId,
                                    Integer averageDemand,
