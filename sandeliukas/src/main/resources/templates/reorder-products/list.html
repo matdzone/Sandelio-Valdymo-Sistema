@@ -25,6 +25,28 @@
             background: #181c1e;
             border-bottom: 1px solid #2a3035;
             padding: 20px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        nav {
+            display: flex;
+            gap: 10px;
+        }
+
+        .nav-link {
+            color: #f5a623;
+            border: 1px solid #f5a623;
+            padding: 8px 14px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .nav-link:hover {
+            background: #f5a623;
+            color: #000;
         }
 
         h1 {
@@ -104,6 +126,10 @@
 
 <header>
     <h1>Trūkstamų prekių užsakymų sąrašas</h1>
+
+    <nav>
+        <a class="nav-link" th:href="@{/forecast}">Paklausos prognozė</a>
+    </nav>
 </header>
 
 <main>
@@ -130,7 +156,7 @@
             <td th:text="${item.product.currentStock}"></td>
             <td th:text="${item.createdAt}"></td>
             <td>
-                <a th:href="@{/reorder-products/{id}/order(id=${item.id})}">
+                <a class="btn" th:href="@{/reorder-products/{id}/order(id=${item.id})}">
                     Užsakyti prekę
                 </a>
             </td>
