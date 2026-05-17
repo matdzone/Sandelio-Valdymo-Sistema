@@ -8,7 +8,7 @@ import java.util.Optional;
 
 public interface LowStockItemRepository extends JpaRepository<LowStockItem, Integer> {
 
-    Optional<LowStockItem> findByProductId(Integer productId);
+    Optional<LowStockItem> findFirstByProductId(Integer productId);
 
     @Query("select coalesce(max(l.id), 0) from LowStockItem l")
     Integer findMaxId();

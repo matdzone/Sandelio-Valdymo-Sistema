@@ -44,79 +44,91 @@ public class Forecast {
     @JoinColumn(name = "fk_Product")
     private Product product;
 
-    public Integer getId() {
-        return id;
-    }
-    public void setId(Integer id) {
-        this.id = id;
-    }
-    public LocalDate getPeriodStart() {
-        return periodStart;
-    }
-    public void setPeriodStart(LocalDate periodStart) {
-        this.periodStart = periodStart;
-    }
+    // ── Getters / Setters ─────────────────────────────────────────────────────
 
-    public LocalDate getPeriodEnd() {
-        return periodEnd;
-    }
-    public void setPeriodEnd(LocalDate periodEnd) {
-        this.periodEnd = periodEnd;
-    }
+    public Integer getId() { return id; }
+    public void setId(Integer id) { this.id = id; }
 
-    public Integer getAverageDemand() {
-        return averageDemand;
-    }
-    public void setAverageDemand(Integer averageDemand) {
+    public LocalDate getPeriodStart() { return periodStart; }
+    public void setPeriodStart(LocalDate periodStart) { this.periodStart = periodStart; }
+
+    public LocalDate getPeriodEnd() { return periodEnd; }
+    public void setPeriodEnd(LocalDate periodEnd) { this.periodEnd = periodEnd; }
+
+    public Integer getAverageDemand() { return averageDemand; }
+    public void setAverageDemand(Integer averageDemand) { this.averageDemand = averageDemand; }
+
+    public Double getSeasonalityCoeff() { return seasonalityCoeff; }
+    public void setSeasonalityCoeff(Double seasonalityCoeff) { this.seasonalityCoeff = seasonalityCoeff; }
+
+    public Integer getReorderPoint() { return reorderPoint; }
+    public void setReorderPoint(Integer reorderPoint) { this.reorderPoint = reorderPoint; }
+
+    public Integer getSafetyStock() { return safetyStock; }
+    public void setSafetyStock(Integer safetyStock) { this.safetyStock = safetyStock; }
+
+    public LocalDate getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDate createdAt) { this.createdAt = createdAt; }
+
+    public Integer getStockPosition() { return stockPosition; }
+    public void setStockPosition(Integer stockPosition) { this.stockPosition = stockPosition; }
+
+    public Integer getRecommendedQuantity() { return recommendedQuantity; }
+    public void setRecommendedQuantity(Integer recommendedQuantity) { this.recommendedQuantity = recommendedQuantity; }
+
+    public Product getProduct() { return product; }
+    public void setProduct(Product product) { this.product = product; }
+
+    // ── Domain metodai (rich domain model) ───────────────────────────────────
+
+    /**
+     * Atnaujina visus prognozės laukus vienu kvietimu.
+     * Naudojamas ForecastService.updateForecastData().
+     */
+    public void updateForecastData(Integer averageDemand,
+                                   Double seasonalityCoeff,
+                                   Integer reorderPoint,
+                                   Integer safetyStock,
+                                   Integer stockPosition,
+                                   Integer recommendedQuantity) {
         this.averageDemand = averageDemand;
-    }
-
-    public Double getSeasonalityCoeff() {
-        return seasonalityCoeff;
-    }
-    public void setSeasonalityCoeff(Double seasonalityCoeff) {
         this.seasonalityCoeff = seasonalityCoeff;
-    }
-
-    public Integer getReorderPoint() {
-        return reorderPoint;
-    }
-    public void setReorderPoint(Integer reorderPoint) {
         this.reorderPoint = reorderPoint;
-    }
-
-    public Integer getSafetyStock() {
-        return safetyStock;
-    }
-    public void setSafetyStock(Integer safetyStock) {
         this.safetyStock = safetyStock;
-    }
-
-    public LocalDate getCreatedAt() {
-        return createdAt;
-    }
-    public void setCreatedAt(LocalDate createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public Integer getStockPosition() {
-        return stockPosition;
-    }
-    public void setStockPosition(Integer stockPosition) {
         this.stockPosition = stockPosition;
-    }
-
-    public Integer getRecommendedQuantity() {
-        return recommendedQuantity;
-    }
-    public void setRecommendedQuantity(Integer recommendedQuantity) {
         this.recommendedQuantity = recommendedQuantity;
     }
 
-    public Product getProduct() {
-        return product;
+    /**
+     * Nustato sezoniškumo koeficientą (domain metodas).
+     * Servisas po šio kvietimo turi iškviesti forecastRepository.save(forecast).
+     */
+    public void setSeasonalityCoefficient(double coefficient) {
+        this.seasonalityCoeff = coefficient;
     }
-    public void setProduct(Product product) {
-        this.product = product;
+
+    /**
+     * Grąžina prognozės duomenų santrauką – naudojama
+     * determineMissingProductsByReorderPoint() vietoj tiesioginių getter'ių.
+     */
+    public ForecastData getForecastData() {
+        return new ForecastData(
+                stockPosition != null ? stockPosition : 0,
+                averageDemand != null ? averageDemand : 0,
+                safetyStock   != null ? safetyStock   : 0,
+                reorderPoint  != null ? reorderPoint  : 0,
+                product
+        );
     }
+
+    /**
+     * Nekintamas duomenų objektas, kurį grąžina getForecastData().
+     */
+    public record ForecastData(
+            int stockPosition,
+            int averageDemand,
+            int safetyStock,
+            int reorderPoint,
+            Product product
+    ) {}
 }

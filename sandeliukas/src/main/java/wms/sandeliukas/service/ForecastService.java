@@ -33,7 +33,7 @@ public class ForecastService {
         this.lowStockItemRepository = lowStockItemRepository;
     }
 
-    public void requestForecastWindow() {
+    public List<Forecast> requestForecastWindow() {
         analyzeSalesHistory();
         determineSeasonality();
         calculateInventoryBalance();
@@ -46,12 +46,9 @@ public class ForecastService {
 
         CompletableFuture.allOf(determineMissingProducts, planReplenishment).join();
 
-        getForecastData();
+        return forecastRepository.findAll();
     }
     public List<Forecast> showForecastWindow() {
-        return getForecastData();
-    }
-    public List<Forecast> getForecastData() {
         return forecastRepository.findAll();
     }
 
@@ -107,7 +104,8 @@ public class ForecastService {
             Integer monthCount = aggregateSalesByMonth(product.getId());
 
             if (monthCount == null || monthCount < 6) {
-                setSeasonalityCoefficient(forecast, 1.0);
+                forecast.setSeasonalityCoefficient(1.0);
+                forecastRepository.save(forecast);
                 continue;
             }
 
@@ -117,7 +115,8 @@ public class ForecastService {
 
             double coefficient = calculateSeasonalityCoefficient(overallAverage, periodAverage);
 
-            saveSeasonalityCoefficient(forecast, coefficient);
+            forecast.setSeasonalityCoefficient(coefficient);
+            forecastRepository.save(forecast);
         }
     }
 
@@ -163,16 +162,6 @@ public class ForecastService {
 
         double coefficient = periodAverage / overallAverage;
         return Math.round(coefficient * 100.0) / 100.0;
-    }
-
-    private void saveSeasonalityCoefficient(Forecast forecast, double coefficient) {
-        forecast.setSeasonalityCoeff(coefficient);
-        forecastRepository.save(forecast);
-    }
-
-    private void setSeasonalityCoefficient(Forecast forecast, double coefficient) {
-        forecast.setSeasonalityCoeff(coefficient);
-        forecastRepository.save(forecast);
     }
 
     @Transactional
@@ -227,19 +216,19 @@ public class ForecastService {
     @Transactional
     public void determineMissingProductsByReorderPoint() {
 
-        List<Forecast> forecasts = getForecastData();
+        List<Forecast> forecasts = forecastRepository.findAll();
 
         for (Forecast forecast : forecasts) {
 
-            Product product = forecast.getProduct();
+            Forecast.ForecastData data = forecast.getForecastData();
 
-            int stockPositionData = getStockPositionData(forecast);
+            Product product = data.product();
 
-            int reorderPoint = calculateReorderPoint(forecast, product);
+            int reorderPoint = calculateReorderPoint(data);
 
             saveReorderPoint(forecast, reorderPoint);
 
-            if (reorderPoint > stockPositionData) {
+            if (reorderPoint > data.stockPosition()) {
 
                 createMissingProduct(product);
 
@@ -250,16 +239,10 @@ public class ForecastService {
         }
     }
 
-    private int getStockPositionData(Forecast forecast) {
-
-        return forecast.getStockPosition() != null
-                ? forecast.getStockPosition()
-                : 0;
-    }
-
-    private int calculateReorderPoint(Forecast forecast, Product product) {
-        int averageDemand = forecast.getAverageDemand() != null ? forecast.getAverageDemand() : 0;
-        int safetyStock = forecast.getSafetyStock() != null ? forecast.getSafetyStock() : 0;
+    private int calculateReorderPoint(Forecast.ForecastData data) {
+        int averageDemand = data.averageDemand();
+        int safetyStock = data.safetyStock();
+        Product product = data.product();
 
         Double leadTimeValue = orderRepository.averageLeadTimeDays(product.getId());
         double leadTimeDays = leadTimeValue != null ? leadTimeValue : 0.0;
@@ -276,7 +259,7 @@ public class ForecastService {
 
     @Transactional
     public void planInventoryReplenishment() {
-        List<Forecast> forecasts = getForecastData();
+        List<Forecast> forecasts = forecastRepository.findAll();
 
         for (Forecast forecast : forecasts) {
 
@@ -353,12 +336,8 @@ public class ForecastService {
         Forecast forecast = forecastRepository.findById(forecastId)
                 .orElseThrow(() -> new RuntimeException("Prognozė nerasta"));
 
-        forecast.setAverageDemand(averageDemand);
-        forecast.setSeasonalityCoeff(seasonalityCoeff);
-        forecast.setReorderPoint(reorderPoint);
-        forecast.setSafetyStock(safetyStock);
-        forecast.setStockPosition(stockPosition);
-        forecast.setRecommendedQuantity(recommendedQuantity);
+        forecast.updateForecastData(averageDemand, seasonalityCoeff,
+                reorderPoint, safetyStock, stockPosition, recommendedQuantity);
 
         forecastRepository.save(forecast);
     }
@@ -383,7 +362,7 @@ public class ForecastService {
     }
 
     private void createMissingProduct(Product product) {
-        if (lowStockItemRepository.findByProductId(product.getId()).isPresent()) {
+        if (lowStockItemRepository.findFirstByProductId(product.getId()).isPresent()) {
             return;
         }
 
@@ -396,7 +375,7 @@ public class ForecastService {
     }
 
     private void ensureProductNotMissing(Product product) {
-        lowStockItemRepository.findByProductId(product.getId())
+        lowStockItemRepository.findFirstByProductId(product.getId())
                 .ifPresent(lowStockItemRepository::delete);
     }
 }
