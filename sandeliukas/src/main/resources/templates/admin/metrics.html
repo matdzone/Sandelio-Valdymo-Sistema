@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistemos metrika — Sandėliukas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root{--bg:#0f1112;--surface:#181c1e;--border:#2a3035;--accent:#f5a623;--text:#dce3e8;--muted:#5a6672;--green:#2ecc71;--red:#e8380d}
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:14px;min-height:100vh}
+        .hazard-bar{height:6px;background:repeating-linear-gradient(-45deg,var(--accent) 0,var(--accent) 12px,#1a1a1a 12px,#1a1a1a 24px)}
+        header{background:var(--surface);border-bottom:1px solid var(--border);height:64px;display:flex;align-items:center;padding:0 40px;gap:16px}
+        .logo{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:3px;color:var(--accent);line-height:1}
+        .logo span{color:var(--muted);font-size:11px;font-family:'IBM Plex Mono',monospace;letter-spacing:2px;display:block;margin-top:2px}
+        .header-sep{flex:1}
+        .nav-link{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);text-decoration:none;border:1px solid var(--accent);padding:4px 12px;letter-spacing:1px}
+        .nav-link:hover{background:var(--accent);color:#000}
+        main{max-width:1200px;margin:0 auto;padding:48px 40px 80px}
+        .page-title{display:flex;align-items:baseline;gap:20px;margin-bottom:12px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+        .page-title h1{font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:4px;color:var(--text);line-height:1}
+        .section-id{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--accent);border:1px solid var(--accent);padding:3px 8px;letter-spacing:2px}
+        .meta{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);margin-bottom:36px}
+
+        /* ── Section header ── */
+        .section-label{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:2px;padding-left:10px;border-left:3px solid var(--accent);margin:36px 0 14px;text-transform:uppercase}
+
+        /* ── Metric cards ── */
+        .metrics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+        .metric-card{background:var(--surface);border:1px solid var(--border);padding:18px 20px}
+        .metric-card .label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:8px;text-transform:uppercase}
+        .metric-card .value{font-family:'IBM Plex Mono',monospace;font-size:26px;color:var(--accent);font-weight:600;line-height:1}
+        .metric-card .unit{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);margin-top:5px}
+        .metric-card.ok   .value{color:var(--green)}
+        .metric-card.warn .value{color:var(--accent)}
+        .metric-card.bad  .value{color:var(--red)}
+
+        /* ── Memory bars ── */
+        .bar-block{background:var(--surface);border:1px solid var(--border);padding:22px 24px}
+        .bar-label{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);margin-bottom:6px;display:flex;justify-content:space-between}
+        .bar-track{height:16px;background:#0f1112;border:1px solid var(--border);margin-bottom:16px;overflow:hidden}
+        .bar-fill{height:100%}
+        .bar-fill.heap{background:var(--accent)}
+        .bar-fill.nonheap{background:var(--green)}
+
+        /* ── KV table ── */
+        .kv-block{background:var(--surface);border:1px solid var(--border);padding:4px 24px}
+        .kv-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:12px}
+        .kv-row:last-child{border-bottom:none}
+        .kv-key{color:var(--muted)}
+        .kv-val{color:var(--text);font-weight:600;text-align:right;max-width:60%}
+        .kv-val.accent{color:var(--accent)}
+        .kv-val.green{color:var(--green)}
+        .kv-val.red{color:var(--red)}
+        .kv-val a{color:var(--accent);text-decoration:none}
+
+        /* ── Two column layout ── */
+        .two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+        @media(max-width:800px){.two-col{grid-template-columns:1fr}}
+
+        .refresh-note{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);margin-top:32px;text-align:right}
+    </style>
+</head>
+<body>
+<div class="hazard-bar"></div>
+<header>
+    <div class="logo">Sandėliukas<span>WAREHOUSE MANAGEMENT SYSTEM</span></div>
+    <div class="header-sep"></div>
+    <a class="nav-link" th:href="@{/customer/menu}">← Meniu</a>
+</header>
+<main>
+    <div class="page-title">
+        <h1>Sistemos metrika</h1>
+        <span class="section-id">METRICS-01</span>
+    </div>
+    <p class="meta">Greitaveikos ir atminties rodikliai &nbsp;·&nbsp; Paleidimo laikas: <strong th:text="${uptimeFormatted}"></strong></p>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         1. GREITAVEIKA
+    ════════════════════════════════════════════════════════════════════ -->
+    <div class="section-label">01 · Greitaveika</div>
+    <div class="metrics-grid">
+        <div class="metric-card" th:classappend="${heapUsagePercent < 60 ? ' ok' : (heapUsagePercent < 85 ? ' warn' : ' bad')}">
+            <div class="label">Heap naudojimas</div>
+            <div class="value" th:text="${heapUsagePercent} + '%'"></div>
+            <div class="unit" th:text="${heapUsedMb} + ' MB iš ' + ${heapMaxMb} + ' MB'"></div>
+        </div>
+        <div class="metric-card">
+            <div class="label">HTTP užklausos</div>
+            <div class="value" th:text="${totalRequests >= 0 ? totalRequests : '—'}"></div>
+            <div class="unit">iš viso nuo paleidimo</div>
+        </div>
+        <div class="metric-card">
+            <div class="label">Vidutinė trukmė</div>
+            <div class="value" th:text="${avgRequestMs}"></div>
+            <div class="unit">ms / užklausa</div>
+        </div>
+        <div class="metric-card" th:classappend="${errorRequests > 0 ? ' bad' : ' ok'}">
+            <div class="label">5xx klaidos</div>
+            <div class="value" th:text="${errorRequests >= 0 ? errorRequests : '—'}"></div>
+            <div class="unit">serverio klaidos</div>
+        </div>
+        <div class="metric-card ok">
+            <div class="label">Veikimo laikas</div>
+            <div class="value" th:text="${uptimeFormatted}"></div>
+            <div class="unit">nuo paskutinio paleidimo</div>
+        </div>
+        <div class="metric-card">
+            <div class="label">Gijos / CPU</div>
+            <div class="value" th:text="${threadCount} + ' / ' + ${processors}"></div>
+            <div class="unit">aktyvios gijos / branduoliai</div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         2. ATMINTIS
+    ════════════════════════════════════════════════════════════════════ -->
+    <div class="section-label">02 · Atminties naudojimas</div>
+    <div class="bar-block">
+        <div class="bar-label">
+            <span>HEAP (objektų atmintis)</span>
+            <span th:text="${heapUsedMb} + ' / ' + ${heapMaxMb} + ' MB (' + ${heapUsagePercent} + '%)'"></span>
+        </div>
+        <div class="bar-track">
+            <div class="bar-fill heap" th:style="'width:' + ${heapUsagePercent} + '%'"></div>
+        </div>
+        <div class="bar-label">
+            <span>NON-HEAP (JVM metaduomenys, klasės, kodas)</span>
+            <span th:text="${nonHeapUsedMb} + ' MB'"></span>
+        </div>
+        <div class="bar-track" style="margin-bottom:0">
+            <div class="bar-fill nonheap" th:style="'width:' + ${nonHeapUsedMb * 100 / (nonHeapUsedMb + 50)} + '%'"></div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         3. SAUGUMAS
+    ════════════════════════════════════════════════════════════════════ -->
+    <div class="section-label">03 · Saugumas</div>
+    <div class="kv-block">
+        <div class="kv-row">
+            <span class="kv-key">Autentifikacijos mechanizmas</span>
+            <span class="kv-val accent" th:text="${authMechanism}"></span>
+        </div>
+        <div class="kv-row">
+            <span class="kv-key">Sesijų strategija</span>
+            <span class="kv-val" th:text="${sessionStrategy}"></span>
+        </div>
+        <div class="kv-row">
+            <span class="kv-key">Slaptažodžio tikrinimas</span>
+            <span class="kv-val" th:text="${passwordStorage}"></span>
+        </div>
+        <div class="kv-row">
+            <span class="kv-key">Apsaugotų maršrutų kiekis</span>
+            <span class="kv-val green" th:text="${protectedRoutes} + '+ maršrutų'"></span>
+        </div>
+        <div class="kv-row">
+            <span class="kv-key">Serverio klaidos (5xx)</span>
+            <span class="kv-val" th:classappend="${errorRequests > 0 ? ' red' : ' green'}"
+                  th:text="${errorRequests >= 0 ? errorRequests : '—'}"></span>
+        </div>
+        <div class="kv-row">
+            <span class="kv-key">Sistemos sveikata</span>
+            <span class="kv-val accent"><a href="/actuator/health" target="_blank">/actuator/health ↗</a></span>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         4. ATNAUJINIMO GALIMYBĖS  +  5. DUOMENŲ KIEKIS
+    ════════════════════════════════════════════════════════════════════ -->
+    <div class="two-col">
+        <div>
+            <div class="section-label">04 · Atnaujinimo galimybės</div>
+            <div class="kv-block">
+                <div class="kv-row">
+                    <span class="kv-key">Spring Boot versija</span>
+                    <span class="kv-val accent" th:text="${springVersion}"></span>
+                </div>
+                <div class="kv-row">
+                    <span class="kv-key">Java versija</span>
+                    <span class="kv-val" th:text="${javaVersion}"></span>
+                </div>
+                <div class="kv-row">
+                    <span class="kv-key">Java tiekėjas</span>
+                    <span class="kv-val" th:text="${javaVendor}"></span>
+                </div>
+                <div class="kv-row">
+                    <span class="kv-key">Build įrankis</span>
+                    <span class="kv-val" th:text="${buildTool}"></span>
+                </div>
+                <div class="kv-row">
+                    <span class="kv-key">Versijų tikrinimo komanda</span>
+                    <span class="kv-val accent" th:text="${updateStrategy}"></span>
+                </div>
+                <div class="kv-row">
+                    <span class="kv-key">Visos priklausomybės (RAW)</span>
+                    <span class="kv-val accent"><a href="/actuator/info" target="_blank">/actuator/info ↗</a></span>
+                </div>
+            </div>
+        </div>
+        <div>
+            <div class="section-label">05 · Duomenų kiekis (DB)</div>
+            <div class="kv-block">
+                <div class="kv-row">
+                    <span class="kv-key">Produktai</span>
+                    <span class="kv-val accent" th:text="${productCount >= 0 ? productCount : '—'}"></span>
+                </div>
+                <div class="kv-row">
+                    <span class="kv-key">Vartotojai</span>
+                    <span class="kv-val accent" th:text="${userCount >= 0 ? userCount : '—'}"></span>
+                </div>
+                <div class="kv-row">
+                    <span class="kv-key">Pirkimai</span>
+                    <span class="kv-val accent" th:text="${purchaseCount >= 0 ? purchaseCount : '—'}"></span>
+                </div>
+                <div class="kv-row">
+                    <span class="kv-key">Komentarai</span>
+                    <span class="kv-val accent" th:text="${commentCount >= 0 ? commentCount : '—'}"></span>
+                </div>
+                <div class="kv-row">
+                    <span class="kv-key">Krepšelio įrašai</span>
+                    <span class="kv-val accent" th:text="${cartItemCount >= 0 ? cartItemCount : '—'}"></span>
+                </div>
+                <div class="kv-row">
+                    <span class="kv-key">Duomenų bazė</span>
+                    <span class="kv-val">MariaDB · stud.if.ktu.lt</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <p class="refresh-note">
+        Duomenys atnaujinami kiekvieną kartą perkraunant puslapį &nbsp;·&nbsp;
+        <a style="color:var(--muted)" href="/actuator/metrics" target="_blank">/actuator/metrics</a> &nbsp;·&nbsp;
+        <a style="color:var(--muted)" href="/actuator/health" target="_blank">/actuator/health</a>
+    </p>
+</main>
+</body>
+</html>
