@@ -33,7 +33,7 @@ public class ForecastService {
         this.lowStockItemRepository = lowStockItemRepository;
     }
 
-    public List<Forecast> requestForecastWindow() {
+    public void requestForecastWindow() {
         analyzeSalesHistory();
         determineSeasonality();
         calculateInventoryBalance();
@@ -46,7 +46,7 @@ public class ForecastService {
 
         CompletableFuture.allOf(determineMissingProducts, planReplenishment).join();
 
-        return getForecastData();
+        getForecastData();
     }
     public List<Forecast> showForecastWindow() {
         return getForecastData();
