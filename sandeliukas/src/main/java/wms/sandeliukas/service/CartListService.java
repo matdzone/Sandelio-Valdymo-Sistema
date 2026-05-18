@@ -23,17 +23,20 @@ public class CartListService {
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
     private final PaymentApiService paymentApiService;
+    private final NotificationService notificationService;
 
     public CartListService(ShoppingCartItemRepository shoppingCartItemRepository,
                            PurchaseRepository purchaseRepository,
                            UserRepository userRepository,
                            ProductRepository productRepository,
-                           PaymentApiService paymentApiService) {
+                           PaymentApiService paymentApiService,
+                           NotificationService notificationService) {
         this.shoppingCartItemRepository = shoppingCartItemRepository;
         this.purchaseRepository = purchaseRepository;
         this.userRepository = userRepository;
         this.productRepository = productRepository;
         this.paymentApiService = paymentApiService;
+        this.notificationService = notificationService;
     }
 
     public List<ShoppingCartItem> selectCartItemsNotBought(String buyerEmail) {
@@ -110,6 +113,7 @@ public class CartListService {
 
     @Transactional
     public PaymentOutcome confirmPayment(String buyerEmail, Integer purchaseId) {
+
         userRepository.findById(buyerEmail)
                 .orElseThrow(() -> new RuntimeException("Vartotojas nerastas"));
 
@@ -125,13 +129,25 @@ public class CartListService {
         PaymentApiService.PaymentResult apiResult = requestPurchaseService(purchase, total);
 
         PaymentOutcome outcome = evaluatePurchaseSuccessData(apiResult);
+
         if (!outcome.isSuccess()) {
             requestUsersPurchaseDataDeletion(purchase);
+            notificationService.sendNotification(
+                    buyerEmail,
+                    "Mokėjimas nepavyko",
+                    "Pirkimo #" + purchaseId + " apmokėjimas nepavyko. " + outcome.getMessage()
+            );
             return outcome;
         }
 
         requestToSetItemsAsBought(purchase);
         requestToSetPurchaseAsDone(purchase);
+
+        notificationService.sendNotification(
+                buyerEmail,
+                "Mokėjimas sėkmingas",
+                "Pirkimas #" + purchaseId + " sėkmingai apmokėtas. " + outcome.getMessage()
+        );
 
         return outcome;
     }
