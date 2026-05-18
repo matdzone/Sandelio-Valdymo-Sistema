@@ -7,10 +7,11 @@ import org.springframework.transaction.annotation.Transactional;
 import wms.sandeliukas.model.LowStockItem;
 import wms.sandeliukas.model.Order;
 import wms.sandeliukas.model.Product;
+import wms.sandeliukas.model.OrderProduct;
 import wms.sandeliukas.repositories.LowStockItemRepository;
 import wms.sandeliukas.repositories.OrderRepository;
 import wms.sandeliukas.repositories.ProductRepository;
-
+import wms.sandeliukas.repositories.OrderProductRepository;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -20,16 +21,21 @@ public class ReorderProductsService {
     private final LowStockItemRepository lowStockItemRepository;
     private final ProductRepository productRepository;
     private final OrderRepository orderRepository;
+    private final OrderProductRepository orderProductRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
 
-    public ReorderProductsService(LowStockItemRepository lowStockItemRepository,
-                                  ProductRepository productRepository,
-                                  OrderRepository orderRepository) {
+    public ReorderProductsService(
+            LowStockItemRepository lowStockItemRepository,
+            ProductRepository productRepository,
+            OrderRepository orderRepository,
+            OrderProductRepository orderProductRepository)
+    {
         this.lowStockItemRepository = lowStockItemRepository;
         this.productRepository = productRepository;
         this.orderRepository = orderRepository;
+        this.orderProductRepository = orderProductRepository;
     }
 
     // 3. requestReorderProductsData()
@@ -125,14 +131,17 @@ public class ReorderProductsService {
     }
 
     // 10. updateIncomingOrders()
-    private void updateIncomingOrders(Order createdOrder, Product itemData) {
-        entityManager.createNativeQuery("""
-                INSERT INTO OrderProduct (fk_Order, fk_Product)
-                VALUES (?, ?)
-                """)
-                .setParameter(1, createdOrder.getId())
-                .setParameter(2, itemData.getId())
-                .executeUpdate();
+    private void updateIncomingOrders(
+            Order createdOrder,
+            Product itemData)
+    {
+        OrderProduct relation =
+                new OrderProduct();
+
+        relation.setOrder(createdOrder);
+        relation.setProduct(itemData);
+
+        orderProductRepository.save(relation);
     }
 
     // 12. updateOrderStatus("Siunčiama")
