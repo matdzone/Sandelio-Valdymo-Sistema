@@ -61,14 +61,7 @@ public class CartListService {
             throw new RuntimeException("Negalima keisti kito vartotojo krepšelio prekės");
         }
 
-        if (newAmount == null || newAmount < 1) {
-            throw new RuntimeException("Naujas kiekis turi būti bent 1");
-        }
-
-        Product product = item.getProduct();
-        if (product.getInitialStock() < newAmount) {
-            throw new RuntimeException("Sandėlyje nepakanka prekės kiekio");
-        }
+        item.checkIfNewAmountIsValid(newAmount);
 
         item.setQuantity(newAmount);
         shoppingCartItemRepository.save(item);

@@ -75,4 +75,19 @@ public class ShoppingCartItem {
     public void setProduct(Product product) {
         this.product = product;
     }
+
+    // ── Domain metodai (rich domain model) ───────────────────────────────────
+
+    /**
+     * Patikrina, ar naujas krepšelio prekės kiekis yra teisingas.
+     * Išmeta RuntimeException, jei kiekis mažesnis nei 1 arba viršija sandėlio likutį.
+     */
+    public void checkIfNewAmountIsValid(Integer newAmount) {
+        if (newAmount == null || newAmount < 1) {
+            throw new RuntimeException("Naujas kiekis turi būti bent 1");
+        }
+        if (this.product.getInitialStock() < newAmount) {
+            throw new RuntimeException("Sandėlyje nepakanka prekės kiekio");
+        }
+    }
 }
