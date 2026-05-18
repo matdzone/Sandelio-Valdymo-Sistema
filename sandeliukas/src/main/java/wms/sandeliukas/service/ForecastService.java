@@ -33,7 +33,7 @@ public class ForecastService {
         this.lowStockItemRepository = lowStockItemRepository;
     }
 
-    public List<Forecast> requestForecastWindow() {
+    public void requestForecastWindow() {
         analyzeSalesHistory();
         determineSeasonality();
         calculateInventoryBalance();
@@ -46,13 +46,12 @@ public class ForecastService {
 
         CompletableFuture.allOf(determineMissingProducts, planReplenishment).join();
 
-        return forecastRepository.findAll();
+        forecastRepository.findAll();
     }
     public List<Forecast> showForecastWindow() {
         return forecastRepository.findAll();
     }
 
-    @Transactional
     public void analyzeSalesHistory() {
         List<Product> products = productRepository.findAll();
 
@@ -92,7 +91,6 @@ public class ForecastService {
         return (int) Math.round(totalSold / (double) months);
     }
 
-    @Transactional
     public void determineSeasonality() {
         List<Product> products = productRepository.findAll();
 
@@ -164,7 +162,6 @@ public class ForecastService {
         return Math.round(coefficient * 100.0) / 100.0;
     }
 
-    @Transactional
     public void calculateInventoryBalance() {
         List<Product> products = productRepository.findAll();
 

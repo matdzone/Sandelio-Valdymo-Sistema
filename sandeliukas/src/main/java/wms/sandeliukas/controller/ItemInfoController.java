@@ -5,6 +5,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import wms.sandeliukas.model.Comment;
 import wms.sandeliukas.service.ItemInfoService;
 
 @Controller
@@ -68,7 +69,7 @@ public class ItemInfoController {
         String buyerEmail = (String) session.getAttribute("userEmail");
 
         try {
-            validateData(text, rating);
+            Comment.validateData(text, rating);
             itemInfoService.recordNewComment(buyerEmail, productId, text, rating);
             redirectAttributes.addFlashAttribute("success", "Komentaras pridėtas");
         } catch (Exception e) {
@@ -88,7 +89,7 @@ public class ItemInfoController {
         String buyerEmail = (String) session.getAttribute("userEmail");
 
         try {
-            validateData(text, rating);
+            Comment.validateData(text, rating);
             itemInfoService.editCommentInformation(buyerEmail, commentId, text, rating);
             redirectAttributes.addFlashAttribute("success", "Komentaras atnaujintas");
         } catch (Exception e) {
@@ -115,15 +116,4 @@ public class ItemInfoController {
         return "redirect:/customer/products/" + productId;
     }
 
-    private void validateData(String text, Integer rating) {
-        if (text == null || text.isBlank()) {
-            throw new RuntimeException("Komentaro tekstas negali būti tuščias");
-        }
-        if (text.length() > 2000) {
-            throw new RuntimeException("Komentaro tekstas negali viršyti 2000 simbolių");
-        }
-        if (rating == null || rating < 1 || rating > 5) {
-            throw new RuntimeException("Įvertinimas turi būti nuo 1 iki 5");
-        }
-    }
 }

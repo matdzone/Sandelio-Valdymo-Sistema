@@ -44,8 +44,6 @@ public class Forecast {
     @JoinColumn(name = "fk_Product")
     private Product product;
 
-    // ── Getters / Setters ─────────────────────────────────────────────────────
-
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 
@@ -79,12 +77,6 @@ public class Forecast {
     public Product getProduct() { return product; }
     public void setProduct(Product product) { this.product = product; }
 
-    // ── Domain metodai (rich domain model) ───────────────────────────────────
-
-    /**
-     * Atnaujina visus prognozės laukus vienu kvietimu.
-     * Naudojamas ForecastService.updateForecastData().
-     */
     public void updateForecastData(Integer averageDemand,
                                    Double seasonalityCoeff,
                                    Integer reorderPoint,
@@ -99,18 +91,10 @@ public class Forecast {
         this.recommendedQuantity = recommendedQuantity;
     }
 
-    /**
-     * Nustato sezoniškumo koeficientą (domain metodas).
-     * Servisas po šio kvietimo turi iškviesti forecastRepository.save(forecast).
-     */
     public void setSeasonalityCoefficient(double coefficient) {
         this.seasonalityCoeff = coefficient;
     }
 
-    /**
-     * Grąžina prognozės duomenų santrauką – naudojama
-     * determineMissingProductsByReorderPoint() vietoj tiesioginių getter'ių.
-     */
     public ForecastData getForecastData() {
         return new ForecastData(
                 stockPosition != null ? stockPosition : 0,
@@ -121,9 +105,6 @@ public class Forecast {
         );
     }
 
-    /**
-     * Nekintamas duomenų objektas, kurį grąžina getForecastData().
-     */
     public record ForecastData(
             int stockPosition,
             int averageDemand,
