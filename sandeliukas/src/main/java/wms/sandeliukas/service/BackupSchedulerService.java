@@ -3,16 +3,15 @@ package wms.sandeliukas.service;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
  * Rezervinio kopijavimo servisas.
  *
- * Kasdien 02:00 registruoja backup įvykį.
- * Produkcijoje šis metodas turėtų iškviesti išorinę mysqldump komandą
- * arba perduoti užduotį debesų saugyklos API (pvz., S3 / universiteto NAS).
- *
+ * Kasdien 02:00 vykdo mysqldump į /backups/ katalogą.
  * Aktyvuojamas per @EnableScheduling (SandeliukasApplication).
  */
 @Service
@@ -21,9 +20,16 @@ public class BackupSchedulerService {
     private static final DateTimeFormatter FMT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
+    private static final String BACKUP_DIR  = "/backups/";
+    private static final String DB_HOST     = "stud.if.ktu.lt";
+    private static final String DB_PORT     = "20001";
+    private static final String DB_USER     = "armarl";
+    private static final String DB_PASSWORD = "armarl";
+    private static final String DB_NAME     = "armarl";
+
     /**
-     * Paleisti kiekvieną dieną 02:00.
-     * Cron formatas: sekunde minutė valanda dienaMen mėnuo dienaSav
+     * Paleidžiama kiekvieną dieną 02:00.
+     * Cron formatas: sekundė minutė valanda dienaMėn mėnuo dienaSav
      */
     @Scheduled(cron = "0 0 2 * * *")
     public void scheduledBackup() {
@@ -39,19 +45,34 @@ public class BackupSchedulerService {
     }
 
     /**
-     * Vykdo backup logiką.
-     * Keitimuisi į produkciją: pakeisti System.out į realią mysqldump komandą.
-     *
-     * Pavyzdys (Production):
-     *   Runtime.getRuntime().exec(new String[]{
-     *       "mysqldump", "-h", "stud.if.ktu.lt", "-P", "20001",
-     *       "-u", "armarl", "-parmarl", "armarl",
-     *       "-r", "/backups/armarl_" + LocalDate.now() + ".sql"
-     *   });
+     * Vykdo mysqldump komandą ir išsaugo .sql failą į BACKUP_DIR.
+     * Prieš paleidžiant įsitikinkite, kad mysqldump įdiegtas serveryje
+     * ir /backups/ katalogas egzistuoja bei yra įrašomas.
      */
-    private void runBackup() {
-        // Demonstracijai – išveda žinutę.
-        // Tikroje aplinkoje: iškviesti mysqldump arba siųsti į NAS/S3.
-        System.out.println("[BACKUP] (Demo) Duomenų bazės kopija įrašyta į /backups/");
+    private void runBackup() throws Exception {
+        new File(BACKUP_DIR).mkdirs();
+
+        String filename = BACKUP_DIR + DB_NAME + "_" + LocalDate.now() + ".sql";
+
+        ProcessBuilder pb = new ProcessBuilder(
+                "mysqldump",
+                "-h", DB_HOST,
+                "-P", DB_PORT,
+                "-u", DB_USER,
+                "-p" + DB_PASSWORD,
+                DB_NAME,
+                "-r", filename
+        );
+
+        pb.redirectErrorStream(true);
+
+        Process process = pb.start();
+        int exitCode = process.waitFor();
+
+        if (exitCode != 0) {
+            throw new RuntimeException("mysqldump baigėsi su klaidos kodu: " + exitCode);
+        }
+
+        System.out.printf("[BACKUP] Failas išsaugotas: %s%n", filename);
     }
 }
