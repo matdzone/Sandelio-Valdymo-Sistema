@@ -18,7 +18,7 @@ public class AuthService {
 
     @Transactional
     public User register(String firstName, String lastName, String email, String password, String repeatedPassword) {
-        validateRegistrationData(firstName, lastName, email, password, repeatedPassword);
+        checkFormRequest(firstName, lastName, email, password, repeatedPassword);
 
         String normalizedEmail = email.trim();
         if (userRepository.existsById(normalizedEmail)) {
@@ -40,7 +40,7 @@ public class AuthService {
         return userRepository.save(user);
     }
 
-    public User login(String email, String password) {
+    public User checkData(String email, String password) {
         if (isBlank(email) || isBlank(password)) {
             throw new RuntimeException("Įveskite el. paštą ir slaptažodį");
         }
@@ -55,7 +55,7 @@ public class AuthService {
         return user;
     }
 
-    private void validateRegistrationData(String firstName, String lastName, String email, String password, String repeatedPassword) {
+    private void checkFormRequest(String firstName, String lastName, String email, String password, String repeatedPassword) {
         if (isBlank(firstName) || isBlank(lastName) || isBlank(email) || isBlank(password) || isBlank(repeatedPassword)) {
             throw new RuntimeException("Užpildykite visus registracijos laukus");
         }

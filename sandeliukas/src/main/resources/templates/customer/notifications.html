@@ -75,7 +75,7 @@
 
     <div class="top-actions">
         <a th:href="@{/customer/menu}">Meniu</a>
-        <a th:href="@{/customer/notifications/settings}">Redaguoti pranešimų nustatymus</a>
+        <a th:href="@{/customer/notifications/editNotificationButton}">Redaguoti pranešimų nustatymus</a>
     </div>
 
     <div th:if="${success}" class="notice success" th:text="${success}"></div>
@@ -88,7 +88,7 @@
     <section th:each="notification : ${notifications}" class="notification">
         <h2 th:text="${notification.title}">Pranešimas</h2>
         <p th:text="${notification.content}">Turinys</p>
-        <form th:action="@{/customer/notifications/delete}" method="post">
+        <form th:action="@{/customer/notifications/buttonDelete}" method="post">
             <input type="hidden" name="notificationId" th:value="${notification.id}">
             <button type="submit">Trinti pranešimą</button>
         </form>

@@ -22,7 +22,7 @@ public class InventoryManagementController {
 
     @GetMapping
     public String rackLayoutWindowRequest(Model model) {
-        model.addAttribute("items", inventoryManagementService.rackLayout());
+        model.addAttribute("items", inventoryManagementService.itemLayoutEditRequest());
         model.addAttribute("products", inventoryManagementService.selectItemRequest());
         return "warehouse/rack-layout";
     }
@@ -30,11 +30,10 @@ public class InventoryManagementController {
     @GetMapping("/product")
     public String itemVolumeRequest(@RequestParam("productId") Integer productId, Model model) {
         InventoryProductData productData = inventoryManagementService.itemVolumeRequest(productId);
-        inventoryManagementService.receivedDataCheck(productData);
-        inventoryManagementService.saveData(productData);
-        model.addAttribute("productData", productData);
-        model.addAttribute("items", inventoryManagementService.rackLayout());
-        model.addAttribute("products", inventoryManagementService.selectItemRequest());
+        if(!inventoryManagementService.receivedDataCheck(productData)){
+            throw new RuntimeException("Prekės duomenys neteisingi");
+        }
+        inventoryManagementService.saveData(model, productData);
         return "warehouse/rack-layout";
     }
 

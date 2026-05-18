@@ -4,6 +4,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import wms.sandeliukas.model.Notification;
+import org.springframework.ui.Model;
 import wms.sandeliukas.model.User;
 import wms.sandeliukas.repositories.UserRepository;
 
@@ -27,8 +28,8 @@ public class NotificationService {
         this.userRepository = userRepository;
     }
 
-    public List<Notification> selectNotifications(String userEmail) {
-        List<String> columns = getNotificationColumns();
+    public String notificationList(Model model,String userEmail) {
+        List<String> columns = notificationListRequest();
         String idColumn = findColumn(columns, "id");
         String titleColumn = findColumn(columns, "title", "name", "pavadinimas");
         String contentColumn = findColumn(columns, "content", "text", "body", "message", "turinys");
@@ -49,19 +50,20 @@ public class NotificationService {
 
         sql += " order by " + idColumn + " desc";
 
-        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+        model.addAttribute("notifications", jdbcTemplate.query(sql, (rs, rowNum) -> {
             Notification notification = new Notification();
             notification.setId(rs.getInt(idColumn));
             notification.setTitle(titleColumn == null ? "Pranešimas" : readString(rs.getObject(titleColumn), "Pranešimas"));
             notification.setContent(contentColumn == null ? "" : readString(rs.getObject(contentColumn), ""));
             notification.setRead(readBoolean(readColumn == null ? null : rs.getObject(readColumn)));
             return notification;
-        }, params.toArray());
+        }, params.toArray()));
+        return "customer/notifications";
     }
 
     @Transactional
     public void deleteNotification(Integer notificationId, String userEmail) {
-        List<String> columns = getNotificationColumns();
+        List<String> columns = notificationListRequest();
         String idColumn = findColumn(columns, "id");
         String receiverColumn = findColumn(columns, "fk_User", "fk_Receiver", "fk_Recipient", "fk_ReceiverUser", "receiver", "recipient", "userEmail", "email");
 
@@ -95,12 +97,12 @@ public class NotificationService {
         return userRepository.save(user);
     }
 
-    public User getNotificationSettings(String userEmail) {
+    public User notificationSettingsRequest(String userEmail) {
         return userRepository.findById(userEmail)
                 .orElseThrow(() -> new RuntimeException("Vartotojas nerastas"));
     }
 
-    private List<String> getNotificationColumns() {
+    private List<String> notificationListRequest() {
         String sql = """
                 select column_name
                 from information_schema.columns
