@@ -7,6 +7,8 @@ import wms.sandeliukas.model.InventoryProductData;
 import wms.sandeliukas.model.Product;
 import wms.sandeliukas.model.RackData;
 import wms.sandeliukas.repositories.ProductRepository;
+import org.springframework.ui.Model;
+import wms.sandeliukas.service.InventoryManagementService;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -31,10 +33,13 @@ public class InventoryManagementService {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public List<InventoryProductData> rackLayout() {
+    public List<InventoryProductData> itemLayoutEditRequest() {
         List<InventoryProductData> items = itemListRequest();
         List<RackData> racks = rackListRequest();
         availableSpaceInRacksCalculation(racks, items);
+
+
+        
         List<InventoryProductData> prioritizedItems = itemLayoutPriorityCalculation(items);
         preliminaryItemLayoutListCalculation(prioritizedItems, racks);
         preliminaryItemLayoutListCheck(prioritizedItems);
@@ -61,10 +66,10 @@ public class InventoryManagementService {
         return productData != null && productData.getId() != null && productData.getVolume() != null && productData.getType() != null;
     }
 
-    public void saveData(InventoryProductData productData) {
-        if (!receivedDataCheck(productData)) {
-            throw new RuntimeException("Prekės duomenys neteisingi");
-        }
+    public void saveData(Model model, InventoryProductData productData) {
+        model.addAttribute("productData", productData);
+        model.addAttribute("items", itemLayoutEditRequest());
+        model.addAttribute("products", selectItemRequest());
     }
 
     public List<RackData> rackDataRequest() {

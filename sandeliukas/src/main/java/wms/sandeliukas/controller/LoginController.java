@@ -37,7 +37,7 @@ public class LoginController {
                             HttpSession session,
                             RedirectAttributes redirectAttributes) {
         try {
-            User user = authService.login(email, password);
+            User user = authService.checkData(email, password);
             session.setAttribute("userEmail", user.getEmail());
             session.setAttribute("userName", user.getFirstName());
             redirectAttributes.addFlashAttribute("success", "Sėkmingai prisijungėte");

@@ -73,7 +73,7 @@
 
     <div th:if="${success}" class="success" th:text="${success}"></div>
 
-    <form th:action="@{/customer/notifications/settings}" method="post">
+    <form th:action="@{/customer/notifications/editNotificationButton}" method="post">
         <label>
             <input type="checkbox" name="showSystemNotifications" value="true"
                    th:checked="${user.showSystemNotifications}">
