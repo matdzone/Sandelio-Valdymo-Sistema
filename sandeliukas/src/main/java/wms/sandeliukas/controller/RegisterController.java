@@ -17,12 +17,12 @@ public class RegisterController {
     }
 
     @GetMapping("/register")
-    public String registerWindow() {
+    public String registerRequest() {
         return "auth/register";
     }
 
     @PostMapping("/register")
-    public String registerForm(@RequestParam String firstName,
+    public String registerFormRequest(@RequestParam String firstName,
                                @RequestParam String lastName,
                                @RequestParam String email,
                                @RequestParam String password,

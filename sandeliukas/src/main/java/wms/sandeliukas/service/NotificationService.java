@@ -3,6 +3,7 @@ package wms.sandeliukas.service;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.ui.Model;
 import wms.sandeliukas.model.Notification;
 import wms.sandeliukas.model.User;
 import wms.sandeliukas.repositories.UserRepository;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 public class NotificationService {
 
     private static final String TABLE_NAME = "Notification";
+    private static final String RECIPIENT_TABLE_NAME = "NotificationRecipient";
 
     private final JdbcTemplate jdbcTemplate;
     private final UserRepository userRepository;
@@ -46,59 +48,65 @@ public class NotificationService {
 
     public List<Notification> selectNotifications(String userEmail) {
         List<String> columns = getNotificationColumns();
+    public String notificationList(Model model, String userEmail) {
+        List<String> columns = notificationListRequest();
         String idColumn = findColumn(columns, "id");
         String titleColumn = findColumn(columns, "title", "name", "pavadinimas");
         String contentColumn = findColumn(columns, "content", "text", "body", "message", "turinys");
-        String readColumn = findColumn(columns, "read", "isRead", "seen", "viewed", "status", "busena", "būsena");
-        String receiverColumn = findColumn(columns, "fk_User", "fk_Receiver", "fk_Recipient", "fk_ReceiverUser", "receiver", "recipient", "userEmail", "email");
+        String readColumn = findColumn(columns, "read", "isRead", "seen", "viewed", "status", "busena");
 
         if (idColumn == null) {
-            throw new RuntimeException("Notification lentelėje nerastas id stulpelis");
+            throw new RuntimeException("Notification lenteleje nerastas id stulpelis");
         }
 
-        String sql = "select * from " + TABLE_NAME;
+        String sql = "select n.* from " + TABLE_NAME + " n";
         List<Object> params = new ArrayList<>();
 
-        if (receiverColumn != null) {
-            sql += " where " + receiverColumn + " = ?";
-            params.add(userEmail);
+        if (tableExists(RECIPIENT_TABLE_NAME)) {
+            sql += " join " + RECIPIENT_TABLE_NAME + " nr on nr.fk_Notification = n." + idColumn;
+            String recipientUserColumn = findRecipientUserColumn();
+            if (recipientUserColumn != null) {
+                sql += " where nr." + recipientUserColumn + " = ?";
+                params.add(userEmail);
+            }
         }
 
-        sql += " order by " + idColumn + " desc";
+        sql += " order by n." + idColumn + " desc";
 
-        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+        model.addAttribute("notifications", jdbcTemplate.query(sql, (rs, rowNum) -> {
             Notification notification = new Notification();
             notification.setId(rs.getInt(idColumn));
-            notification.setTitle(titleColumn == null ? "Pranešimas" : readString(rs.getObject(titleColumn), "Pranešimas"));
+            notification.setTitle(titleColumn == null ? "Pranesimas" : readString(rs.getObject(titleColumn), "Pranesimas"));
             notification.setContent(contentColumn == null ? "" : readString(rs.getObject(contentColumn), ""));
             notification.setRead(readBoolean(readColumn == null ? null : rs.getObject(readColumn)));
             return notification;
-        }, params.toArray());
+        }, params.toArray()));
+        return "customer/notifications";
     }
 
     @Transactional
     public void deleteNotification(Integer notificationId, String userEmail) {
-        List<String> columns = getNotificationColumns();
+        List<String> columns = notificationListRequest();
         String idColumn = findColumn(columns, "id");
-        String receiverColumn = findColumn(columns, "fk_User", "fk_Receiver", "fk_Recipient", "fk_ReceiverUser", "receiver", "recipient", "userEmail", "email");
 
         if (idColumn == null) {
-            throw new RuntimeException("Notification lentelėje nerastas id stulpelis");
+            throw new RuntimeException("Notification lenteleje nerastas id stulpelis");
         }
 
-        if (receiverColumn == null) {
-            jdbcTemplate.update("delete from " + TABLE_NAME + " where " + idColumn + " = ?", notificationId);
-            return;
+        if (tableExists(RECIPIENT_TABLE_NAME)) {
+            jdbcTemplate.update(
+                    "delete from " + RECIPIENT_TABLE_NAME + " where fk_Notification = ?",
+                    notificationId
+            );
         }
 
         int updatedRows = jdbcTemplate.update(
-                "delete from " + TABLE_NAME + " where " + idColumn + " = ? and " + receiverColumn + " = ?",
-                notificationId,
-                userEmail
+                "delete from " + TABLE_NAME + " where " + idColumn + " = ?",
+                notificationId
         );
 
         if (updatedRows == 0) {
-            throw new RuntimeException("Pranešimas nerastas");
+            throw new RuntimeException("Pranesimas nerastas");
         }
     }
 
@@ -112,12 +120,31 @@ public class NotificationService {
         return userRepository.save(user);
     }
 
-    public User getNotificationSettings(String userEmail) {
+    public User notificationSettingsRequest(String userEmail) {
         return userRepository.findById(userEmail)
                 .orElseThrow(() -> new RuntimeException("Vartotojas nerastas"));
     }
 
-    private List<String> getNotificationColumns() {
+    private List<String> notificationListRequest() {
+        return getColumns(TABLE_NAME);
+    }
+
+    private String findRecipientUserColumn() {
+        List<String> columns = getColumns(RECIPIENT_TABLE_NAME);
+        return findColumn(columns, "fk_User", "fk_Recipient", "fk_Receiver", "recipient", "receiver", "userEmail", "email");
+    }
+
+    private boolean tableExists(String tableName) {
+        Integer count = jdbcTemplate.queryForObject("""
+                select count(*)
+                from information_schema.tables
+                where table_schema = database()
+                  and table_name = ?
+                """, Integer.class, tableName);
+        return count != null && count > 0;
+    }
+
+    private List<String> getColumns(String tableName) {
         String sql = """
                 select column_name
                 from information_schema.columns
@@ -126,9 +153,9 @@ public class NotificationService {
                 order by ordinal_position
                 """;
 
-        List<String> columns = jdbcTemplate.queryForList(sql, String.class, TABLE_NAME);
+        List<String> columns = jdbcTemplate.queryForList(sql, String.class, tableName);
         if (columns.isEmpty()) {
-            throw new RuntimeException("Duomenų bazėje nerasta Notification lentelė");
+            throw new RuntimeException("Duomenu bazeje nerasta " + tableName + " lentele");
         }
 
         return columns;

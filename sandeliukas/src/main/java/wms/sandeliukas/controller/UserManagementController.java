@@ -20,29 +20,19 @@ public class UserManagementController {
         this.notificationService = notificationService;
     }
 
-    @GetMapping
-    public String notificationWindowRequest(Model model, HttpSession session) {
-        String userEmail = getLoggedInUserEmail(session);
-        if (userEmail == null) {
-            return "redirect:/login";
-        }
 
-        model.addAttribute("notifications", notificationService.selectNotifications(userEmail));
-        return "customer/notifications";
-    }
-
-    @GetMapping("/settings")
+    @GetMapping("/editNotificationButton")
     public String notificationSettingsRequest(Model model, HttpSession session) {
         String userEmail = getLoggedInUserEmail(session);
         if (userEmail == null) {
             return "redirect:/login";
         }
 
-        model.addAttribute("user", notificationService.getNotificationSettings(userEmail));
+        model.addAttribute("user", notificationService.notificationSettingsRequest(userEmail));
         return "customer/notification-settings";
     }
 
-    @PostMapping("/settings")
+    @PostMapping("/editNotificationButton")
     public String stateSaveNotification(@RequestParam(value = "showSystemNotifications", required = false) Boolean showSystemNotifications,
                                         @RequestParam(value = "showMessageNotifications", required = false) Boolean showMessageNotifications,
                                         HttpSession session,
@@ -58,10 +48,10 @@ public class UserManagementController {
                 Boolean.TRUE.equals(showMessageNotifications)
         );
         redirectAttributes.addFlashAttribute("success", "Pranešimų nustatymai atnaujinti");
-        return "redirect:/customer/notifications/settings";
+        return "redirect:/customer/notifications/editNotificationButton";
     }
 
-    @PostMapping("/delete")
+    @PostMapping("/buttonDelete")
     public String deleteRequest(@RequestParam("notificationId") Integer notificationId,
                                 HttpSession session,
                                 RedirectAttributes redirectAttributes) {
