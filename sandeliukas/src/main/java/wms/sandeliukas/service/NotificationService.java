@@ -29,6 +29,25 @@ public class NotificationService {
         this.userRepository = userRepository;
     }
 
+    @Transactional
+    public void sendNotification(String userEmail, String title, String content) {
+        Integer maxId = jdbcTemplate.queryForObject(
+                "select coalesce(max(id), 0) from " + TABLE_NAME, Integer.class);
+        Integer newId = (maxId == null ? 0 : maxId) + 1;
+
+        jdbcTemplate.update(
+                "insert into " + TABLE_NAME + " (id, title, body) values (?, ?, ?)",
+                newId, title, content
+        );
+
+        jdbcTemplate.update(
+                "insert into NotificationRecipient (fk_Notification, fk_User) values (?, ?)",
+                newId, userEmail
+        );
+    }
+
+    public List<Notification> selectNotifications(String userEmail) {
+        List<String> columns = getNotificationColumns();
     public String notificationList(Model model, String userEmail) {
         List<String> columns = notificationListRequest();
         String idColumn = findColumn(columns, "id");

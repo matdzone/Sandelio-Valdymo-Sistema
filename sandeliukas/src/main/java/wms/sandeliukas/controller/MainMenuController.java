@@ -29,6 +29,10 @@ public class MainMenuController {
     public String requestItemListWindow() {
         return "redirect:/customer/products";
     }
+
+    @GetMapping("/customer/cart-list")
+    public String requestCartListWindow() {
+        return "redirect:/customer/cart";
     
     @GetMapping("/customer/notifications")
     public String notificationWindowRequest(Model model, HttpSession session) {

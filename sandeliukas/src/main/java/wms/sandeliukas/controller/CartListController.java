@@ -89,6 +89,7 @@ public class CartListController {
     public String confirmPayment(@RequestParam("purchaseId") Integer purchaseId,
                                  HttpSession session,
                                  RedirectAttributes redirectAttributes) {
+
         String buyerEmail = requestUsersData(session);
 
         try {

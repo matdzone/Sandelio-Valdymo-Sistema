@@ -34,7 +34,6 @@ public class ItemListController {
 
     private String requestItemList(int page, Model model) {
         List<Product> allProducts = new ArrayList<>(productRepository.findAll());
-        sortItems(allProducts);
 
         int totalProducts = allProducts.size();
         int totalPages = (int) Math.ceil((double) totalProducts / PAGE_SIZE);
@@ -44,11 +43,14 @@ public class ItemListController {
         List<Product> pageProducts;
         if (validPage == 1) {
             pageProducts = selectRandomFirst40(allProducts);
+            sortItems(pageProducts);
+            generatePageLinks(model, validPage, totalPages, totalProducts);
         } else {
             pageProducts = selectRandom40ByNumber(allProducts, validPage);
+            sortItems(pageProducts);
+            generatePageLinks(model, validPage, totalPages, totalProducts);
         }
 
-        generatePageLinks(model, validPage, totalPages, totalProducts);
         model.addAttribute("products", pageProducts);
 
         return "customer/products";
