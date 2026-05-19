@@ -45,9 +45,7 @@ public class NotificationService {
                 newId, userEmail
         );
     }
-
-    public List<Notification> selectNotifications(String userEmail) {
-        List<String> columns = getNotificationColumns();
+    
     public String notificationList(Model model, String userEmail) {
         List<String> columns = notificationListRequest();
         String idColumn = findColumn(columns, "id");
